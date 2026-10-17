@@ -1,369 +1,726 @@
 
 import streamlit as st
 import streamlit.components.v1 as components
-import base64
 from pathlib import Path
+import base64
+import json
 
-st.set_page_config(page_title="RUNAWAY 3D", page_icon="🐎", layout="wide")
-
-BASE = Path(__file__).parent
-
-def audio_file(name):
-    p = BASE / name
-    return base64.b64encode(p.read_bytes()).decode() if p.exists() else ""
-
-music = audio_file("An83.mp3")
-lose_music = audio_file("thua.mp3")
+st.set_page_config(
+    page_title="RUNAWAY",
+    page_icon="🐴",
+    layout="wide",
+    initial_sidebar_state="collapsed"
+)
 
 st.markdown("""
 <style>
-.stApp{background:#071c17}
-header[data-testid="stHeader"],footer{visibility:hidden}
-.block-container{padding:0!important;max-width:100%!important}
+.stApp {background:#111722}
+header,footer,#MainMenu {visibility:hidden}
+.block-container {padding:.25rem .35rem;max-width:100%}
 </style>
 """, unsafe_allow_html=True)
 
-html = r"""
-<!DOCTYPE html>
-<html>
+
+def audio_data(name):
+    path = Path(__file__).parent / name
+    if not path.exists():
+        return ""
+    return "data:audio/mpeg;base64," + base64.b64encode(
+        path.read_bytes()
+    ).decode("ascii")
+
+
+music = json.dumps(audio_data("An83.mp3"))
+lose = json.dumps(audio_data("thua.mp3"))
+
+html = r'''<!doctype html>
+<html lang="vi">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <style>
-*{box-sizing:border-box}
-html,body{margin:0;width:100%;height:100%;overflow:hidden;font-family:Arial;background:#071c17;color:white}
-#game{position:relative;width:100%;height:100dvh;min-height:500px;background:#73d8f7;overflow:hidden}
-canvas{display:block}
-#hud{display:none;position:absolute;inset:0;pointer-events:none}
-.top{position:absolute;top:10px;left:10px;right:10px;display:flex;justify-content:space-between;align-items:center;gap:5px}
-.pill{background:#092e39ed;border:1px solid #ffffff66;padding:8px;border-radius:12px;font-weight:bold;font-size:13px}
-#hearts{color:#ff5050;font-size:19px}
-button{cursor:pointer;touch-action:manipulation}
-#hamb{pointer-events:auto;background:#092e39;color:white;border:1px solid #ffffff66;border-radius:12px;padding:8px 12px;font-size:23px}
-.controls{position:absolute;bottom:18px;left:12px;right:12px;display:flex;justify-content:space-between;align-items:end;gap:8px}
-.leftcontrols{display:flex;gap:10px}
-.ctrl{pointer-events:auto;width:66px;height:66px;border-radius:20px;border:2px solid #ffffff66;background:#073849ed;color:white;font-size:28px;font-weight:bold;box-shadow:0 4px 0 #031c24}
-#jump{width:86px;background:#ffd45a;color:#38260a;font-size:14px}
-#turnBack{width:83px;height:60px;font-size:13px}
-#menu,#pause,#end{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:20px;background:#061b25a8}
-#menu{background:linear-gradient(#70d9f588,#183b27aa)}
-.panel{width:min(90%,330px);padding:20px;border-radius:20px;background:#082c36ed;border:2px solid #ffffff66}
-h1{font-size:clamp(36px,8vw,58px);margin:0;text-shadow:3px 4px #6a260c}
-.sub{letter-spacing:4px;font-weight:bold;margin:6px 0 18px}
-.action{width:100%;padding:13px;border:0;border-radius:13px;margin:5px 0;background:#ffd45a;color:#38260a;font-size:16px;font-weight:bold}
-.secondary{background:#103d4a;color:white;border:1px solid #ffffff66}
-#pause,#end{display:none;z-index:4}
-#stats{line-height:2}
-#toast{display:none;position:absolute;top:66px;left:50%;transform:translateX(-50%);background:#092e39;padding:8px;border-radius:10px;white-space:nowrap}
-.note{font-size:12px}
-@media(max-width:380px){.pill{font-size:11px;padding:6px}.ctrl{width:58px;height:60px}#turnBack{width:70px;font-size:11px}}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#f5a2a0;font-family:system-ui,Arial;touch-action:none}
+canvas{display:block;width:100%;height:100%}
+#hud{position:absolute;inset:0;pointer-events:none;color:white;text-shadow:0 2px 4px #28201c}
+.pill{background:#172333bf;border:1px solid #ffffff45;border-radius:13px;padding:8px 10px;backdrop-filter:blur(4px);font-weight:850}
+#stats{position:absolute;top:9px;left:9px;display:flex;gap:6px;flex-wrap:wrap;font-size:13px}
+#menuButton{position:absolute;right:9px;top:9px;pointer-events:auto;border:0;border-radius:50%;width:47px;height:47px;background:#ffc83d;color:#8b3217;font-size:26px;font-weight:1000}
+#menuPanel{position:absolute;top:62px;right:9px;display:none;pointer-events:auto;min-width:150px;z-index:4}
+#menuPanel button{display:block;width:100%;margin:5px 0}
+.small{border:1px solid #ffffff60;border-radius:11px;padding:10px;background:#20384bef;color:#fff;font-weight:800}
+#center{position:absolute;left:50%;top:48%;transform:translate(-50%,-50%);width:min(90%,470px);text-align:center;pointer-events:auto}
+#title{font-size:clamp(36px,9vw,68px);line-height:.98;letter-spacing:3px;font-weight:1000;color:#ffe16b;-webkit-text-stroke:1px #7d3f1a;text-shadow:0 4px 0 #9b4e20,0 8px 18px #392d27;margin:0 0 7px}
+#subtitle{font-size:clamp(11px,2.6vw,15px);letter-spacing:2px;font-weight:900;margin-bottom:13px}
+#description{line-height:1.45;margin:8px auto 14px;max-width:370px;font-size:14px}
+button{font-family:inherit;cursor:pointer;touch-action:manipulation}
+.main{border:0;border-radius:14px;padding:13px 22px;background:linear-gradient(#ffe779,#ffb62d);color:#3b2614;font-size:18px;font-weight:1000;box-shadow:0 5px 0 #ad641e}
+.main:active,.small:active{transform:translateY(2px)}
+#soundRow{display:flex;justify-content:center;align-items:center;gap:9px;margin:10px 0;font-size:13px;font-weight:850}
+#soundToggle{width:48px;height:28px;border-radius:30px;border:2px solid #fff8;background:#438f54;position:relative}
+#soundToggle:after{content:"";position:absolute;top:3px;left:22px;width:18px;height:18px;border-radius:50%;background:white}
+#soundToggle.off{background:#606975}
+#soundToggle.off:after{left:4px}
+#controls{position:absolute;left:0;right:0;bottom:12px;display:none;justify-content:space-between;align-items:end;padding:0 12px;pointer-events:none}
+.cluster{display:flex;gap:8px;pointer-events:auto}
+.ctrl{width:58px;height:58px;border-radius:50%;border:2px solid #ffffffc9;background:#172c3bba;color:#fff;font-size:23px;font-weight:1000}
+.jump{width:68px;height:68px;background:#ed9d31ed;font-size:13px}
+#tip{position:absolute;bottom:84px;left:50%;transform:translateX(-50%);font-size:11px;white-space:nowrap}
+@media(max-width:420px){
+#stats{font-size:12px}
+.pill{padding:7px 8px}
+.ctrl{width:53px;height:53px}
+.jump{width:64px;height:64px}
+}
 </style>
 </head>
 <body>
-<div id="game">
- <div id="hud">
-  <div class="top">
-   <div class="pill">🏁 <span id="score">0</span> m</div>
-   <div class="pill">⚡ <span id="spd">1.0</span>x</div>
-   <div class="pill" id="hearts">♥ ♥ ♥</div>
-   <button id="hamb">☰</button>
-  </div>
-  <div id="toast"></div>
-  <div class="controls">
-   <div class="leftcontrols">
-    <button class="ctrl" id="left">◀</button>
-    <button class="ctrl" id="right">▶</button>
-   </div>
-   <button class="ctrl" id="turnBack">↶<br>NHÌN SAU</button>
-   <button class="ctrl" id="jump">↑<br>NHẢY</button>
-  </div>
- </div>
- <div id="menu">
-  <div class="panel">
-   <h1>🐎 RUNAWAY</h1>
-   <div class="sub">3D HORSE RUN</div>
-   <p>Hãy chạy trốn khỏi ông chủ!</p>
-   <button class="action" id="start">▶ BẮT ĐẦU</button>
-   <button class="action secondary" id="sound">🔊 ÂM THANH: BẬT</button>
-   <div class="note">Né chướng ngại vật và cố gắng sống sót!</div>
-  </div>
- </div>
- <div id="pause">
-  <h2>⏸ TẠM DỪNG</h2>
-  <button class="action" id="resume">▶ TIẾP TỤC</button>
-  <button class="action" id="restart">↻ CHƠI LẠI</button>
-  <button class="action secondary" id="home1">⌂ VỀ MENU</button>
- </div>
- <div id="end">
-  <h2>🐎 BỊ BẮT RỒI!</h2>
-  <p>Ông chủ đã đuổi kịp bạn...</p>
-  <div id="stats"></div>
-  <button class="action" id="again">↻ CHƠI LẠI</button>
-  <button class="action secondary" id="home2">⌂ VỀ MENU</button>
- </div>
+<div id="hud">
+<div id="stats">
+<div class="pill">🏁 <span id="score">0</span> m</div>
+<div class="pill">⚡ <span id="speed">10</span></div>
+<div class="pill">❤️ <span id="hearts">♥ ♥ ♥</span></div>
 </div>
-<audio id="music" loop src="data:audio/mpeg;base64,@@MUSIC@@"></audio>
-<audio id="loseMusic" src="data:audio/mpeg;base64,@@LOSE@@"></audio>
+<button id="menuButton">☰</button>
+<div id="menuPanel" class="pill">
+<button class="small" id="resume">▶ Tiếp tục</button>
+<button class="small" id="restart">↻ Chơi lại</button>
+<button class="small" id="home">⌂ Về menu</button>
+</div>
+<div id="center">
+<h1 id="title">RUNAWAY</h1>
+<div id="subtitle">FIRST-PERSON 3D ESCAPE</div>
+<p id="description">Bạn là một chú ngựa vừa xổng chuồng!<br>Né vật cản và đừng để ông chủ bắt được.</p>
+<div id="soundRow">
+<span>ÂM THANH</span>
+<button id="soundToggle" aria-label="Bật tắt âm thanh"></button>
+<span id="soundLabel">BẬT</span>
+</div>
+<button id="start" class="main">BẮT ĐẦU 🐴</button>
+</div>
+<div id="tip">← → hoặc A/D để né · ↑ / NHẢY để nhảy</div>
+</div>
+
+<div id="controls">
+<div class="cluster">
+<button class="ctrl" id="left">◀</button>
+<button class="ctrl" id="right">▶</button>
+</div>
+<div class="cluster">
+<button class="ctrl jump" id="jump">NHẢY ⤴</button>
+</div>
+</div>
+
+<script>
+const MUSIC_SRC=__MUSIC__;
+const LOSE_SRC=__LOSE__;
+</script>
+
 <script type="module">
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+
+const scene=new THREE.Scene();
+scene.background=new THREE.Color(0xf5a2a0);
+scene.fog=new THREE.Fog(0xf5a2a0,32,110);
+
+const camera=new THREE.PerspectiveCamera(76,innerWidth/innerHeight,.1,180);
+camera.position.set(0,1.62,3);
+
+const renderer=new THREE.WebGLRenderer({antialias:false,powerPreference:'low-power'});
+renderer.setPixelRatio(Math.min(devicePixelRatio,1.35));
+renderer.setSize(innerWidth,innerHeight);
+renderer.outputColorSpace=THREE.SRGBColorSpace;
+document.body.insertBefore(renderer.domElement,document.body.firstChild);
+
+scene.add(new THREE.HemisphereLight(0xffffff,0x77704d,2));
+const sun=new THREE.DirectionalLight(0xffe2b0,2.2);
+sun.position.set(-8,15,8);
+scene.add(sun);
+
+const M=c=>new THREE.MeshStandardMaterial({color:c,roughness:1});
+const grass=M(0x70b958),roadmat=M(0x76503e),cream=M(0xf4d6a0);
+const wood=M(0x9b5d2e),darkwood=M(0x60391f);
+const leaf=M(0x218b45),leaf2=M(0x48a83f),trunk=M(0x93612d);
+const orange=M(0xe9a83a),blue=M(0x3e8eaa),red=M(0xd84632);
+const barrelmat=M(0x8b4c26),black=M(0x24272a);
+
+const floor=new THREE.Mesh(new THREE.PlaneGeometry(180,180),grass);
+floor.rotation.x=-Math.PI/2;
+floor.position.y=-.08;
+scene.add(floor);
+
+const road=new THREE.Mesh(new THREE.PlaneGeometry(8,190),roadmat);
+road.rotation.x=-Math.PI/2;
+road.position.set(0,-.025,-42);
+scene.add(road);
+
+for(const x of [-4.08,4.08]){
+    const e=new THREE.Mesh(new THREE.BoxGeometry(.15,.04,190),cream);
+    e.position.set(x,0,-42);
+    scene.add(e);
+}
+
+const dashes=[];
+for(let z=12;z>-115;z-=7){
+    const d=new THREE.Mesh(new THREE.BoxGeometry(.11,.025,3),cream);
+    d.position.set(0,.012,z);
+    scene.add(d);
+    dashes.push(d);
+}
+
+function tree(x,z,s=1){
+    const g=new THREE.Group();
+    const t=new THREE.Mesh(new THREE.CylinderGeometry(.16*s,.25*s,1.5*s,6),trunk);
+    const c=new THREE.Mesh(new THREE.ConeGeometry(1.05*s,2.1*s,6),Math.random()<.5?leaf:leaf2);
+    t.position.y=.75*s;
+    c.position.y=2.1*s;
+    g.add(t,c);
+    g.position.set(x,0,z);
+    scene.add(g);
+}
+
+for(let i=0;i<42;i++){
+    tree((Math.random()<.5?-1:1)*(6+Math.random()*14),10-Math.random()*130,.65+Math.random()*.8);
+}
+
+function house(x,z,color){
+    const g=new THREE.Group();
+    const w=new THREE.Mesh(new THREE.BoxGeometry(3,2.2,2.8),M(color));
+    const r=new THREE.Mesh(new THREE.ConeGeometry(2.4,1.35,4),red);
+    const d=new THREE.Mesh(new THREE.BoxGeometry(.65,1.35,.08),darkwood);
+    w.position.y=1.1;
+    r.position.y=2.85;
+    r.rotation.y=Math.PI/4;
+    d.position.set(0,.68,1.45);
+    g.add(w,r,d);
+    g.position.set(x,0,z);
+    scene.add(g);
+}
+
+for(let z=-12;z>-100;z-=19){
+    house(-7.2,z,0xe7a05d);
+    house(7.2,z-7,0xc9694d);
+}
+
+function fence(x,z){
+    const g=new THREE.Group();
+    for(const y of [.42,.95]){
+        const b=new THREE.Mesh(new THREE.BoxGeometry(1.9,.13,.13),wood);
+        b.position.set(0,y,0);
+        g.add(b);
+    }
+    for(const x0 of [-.78,0,.78]){
+        const p=new THREE.Mesh(new THREE.BoxGeometry(.14,1.2,.15),darkwood);
+        p.position.set(x0,.55,0);
+        g.add(p);
+    }
+    g.position.set(x,0,z);
+    scene.add(g);
+    return g;
+}
+
+function crate(x,z){
+    const g=new THREE.Group();
+    const b=new THREE.Mesh(new THREE.BoxGeometry(1.05,1.05,1),wood);
+    b.position.y=.53;
+    g.add(b);
+    for(const y of [.15,.9]){
+        const p=new THREE.Mesh(new THREE.BoxGeometry(1.1,.09,1.05),orange);
+        p.position.y=y;
+        g.add(p);
+    }
+    g.position.set(x,0,z);
+    scene.add(g);
+    return g;
+}
+
+function barrel(x,z){
+    const g=new THREE.Group();
+    const b=new THREE.Mesh(new THREE.CylinderGeometry(.43,.47,.9,8),barrelmat);
+    b.position.y=.45;
+    g.add(b);
+    for(const y of [.2,.7]){
+        const r=new THREE.Mesh(new THREE.TorusGeometry(.44,.05,5,8),darkwood);
+        r.rotation.x=Math.PI/2;
+        r.position.y=y;
+        g.add(r);
+    }
+    g.position.set(x,0,z);
+    scene.add(g);
+    return g;
+}
+
+// Khu chuồng ở màn hình menu
+const stable=new THREE.Group();
+scene.add(stable);
+
+const back=new THREE.Mesh(new THREE.BoxGeometry(12,5,.35),wood);
+back.position.set(0,2.5,-5);
+stable.add(back);
+
+for(let x=-5.5;x<=5.5;x+=1.1){
+    const p=new THREE.Mesh(new THREE.BoxGeometry(.16,3.4,.2),darkwood);
+    p.position.set(x,1.7,-3.7);
+    stable.add(p);
+}
+
+const hay=new THREE.Mesh(new THREE.BoxGeometry(1.5,.7,1),orange);
+hay.position.set(-2,.35,-2.5);
+stable.add(hay);
+
+// Ông chủ ở menu
+const owner=new THREE.Group();
+const torso=new THREE.Mesh(new THREE.BoxGeometry(.8,1.1,.48),blue);
+torso.position.y=1.1;
+owner.add(torso);
+
+const head=new THREE.Mesh(new THREE.SphereGeometry(.34,9,7),M(0xe5b88e));
+head.position.set(0,1.86,.05);
+owner.add(head);
+
+const hair=new THREE.Mesh(new THREE.SphereGeometry(.35,8,6),darkwood);
+hair.position.set(0,2.06,-.02);
+owner.add(hair);
+
+for(const x of [-.18,.18]){
+    const eye=new THREE.Mesh(new THREE.SphereGeometry(.045,6,5),black);
+    eye.position.set(x,1.88,.35);
+    owner.add(eye);
+}
+
+const armL=new THREE.Mesh(new THREE.BoxGeometry(.19,.82,.2),blue);
+armL.position.set(-.52,.92,.12);
+armL.rotation.z=-.85;
+owner.add(armL);
+
+const armR=armL.clone();
+armR.position.x=.52;
+armR.rotation.z=.85;
+owner.add(armR);
+
+owner.position.set(1.5,0,-1.4);
+stable.add(owner);
+
+const hot=new THREE.Group();
+const hb=new THREE.Mesh(new THREE.CylinderGeometry(.52,.58,1.1,10),barrelmat);
+hb.position.y=.55;
+hot.add(hb);
+
+for(const y of [.2,.85]){
+    const r=new THREE.Mesh(new THREE.TorusGeometry(.55,.06,5,10),orange);
+    r.rotation.x=Math.PI/2;
+    r.position.y=y;
+    hot.add(r);
+}
+
+const steamMat=new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.25});
+for(let i=0;i<3;i++){
+    const s=new THREE.Mesh(new THREE.SphereGeometry(.18+i*.04,7,5),steamMat);
+    s.position.set((i-1)*.18,1.3+i*.22,0);
+    hot.add(s);
+}
+
+hot.position.set(.7,0,-.2);
+stable.add(hot);
+
+// Ông chủ đuổi theo từ phía sau.
+// Vị trí z lớn hơn camera là phía sau người chơi.
+const pursuer=new THREE.Group();
+const pbody=new THREE.Mesh(new THREE.BoxGeometry(.7,1.05,.42),blue);
+const phead=new THREE.Mesh(new THREE.SphereGeometry(.31,8,7),M(0xe5b88e));
+
+pbody.position.y=1.05;
+phead.position.y=1.82;
+pursuer.add(pbody,phead);
+
+for(const x of [-.22,.22]){
+    for(const z of [-.12,.12]){
+        const l=new THREE.Mesh(new THREE.BoxGeometry(.13,.6,.14),blue);
+        l.position.set(x,.34,z);
+        pursuer.add(l);
+    }
+}
+
+pursuer.position.set(0,0,12);
+scene.add(pursuer);
+
+const obstacles=[];
+const falling=[];
+
+function spawnObstacle(z){
+    const lane=[-2.35,0,2.35][Math.floor(Math.random()*3)];
+    const r=Math.random();
+    const o=r<.42?fence(lane,z):r<.76?crate(lane,z):barrel(lane,z);
+    obstacles.push(o);
+}
+
+function spawnFalling(){
+    const x=[-2.35,0,2.35][Math.floor(Math.random()*3)];
+    const o=new THREE.Mesh(new THREE.BoxGeometry(.9,.9,.9),orange);
+    o.position.set(x,8,-90-Math.random()*12);
+    scene.add(o);
+    o.userData.vy=0;
+    falling.push(o);
+}
+
+let state='menu';
+let lane=0;
+let jumpY=0;
+let jumpV=0;
+let hearts=3;
+let distance=0;
+let speed=10;
+let spawnTimer=0;
+let fallTimer=0;
+let clock=0;
+let dayTimer=0;
+let night=false;
+let audioOn=true;
+let hitCooldown=0;
+
+function makeAudio(src,loop){
+    if(!src)return null;
+    const a=new Audio(src);
+    a.loop=loop;
+    return a;
+}
+
+const bg=makeAudio(MUSIC_SRC,true);
+const lose=makeAudio(LOSE_SRC,false);
 const $=id=>document.getElementById(id);
-const root=$('game'),scene=new THREE.Scene();
-scene.background=new THREE.Color(0x73d8f7);
-scene.fog=new THREE.Fog(0x73d8f7,40,160);
-const camera=new THREE.PerspectiveCamera(65,root.clientWidth/root.clientHeight,.1,250);
-const renderer=new THREE.WebGLRenderer({antialias:true});
-renderer.setPixelRatio(Math.min(devicePixelRatio,1.6));
-renderer.setSize(root.clientWidth,root.clientHeight);
-renderer.shadowMap.enabled=true;root.prepend(renderer.domElement);
-scene.add(new THREE.HemisphereLight(0xcaf1ff,0x52713a,2));
-const sun=new THREE.DirectionalLight(0xfff1d0,2);
-sun.position.set(-8,18,7);sun.castShadow=true;scene.add(sun);
-const mat=c=>new THREE.MeshStandardMaterial({color:c,roughness:.9});
-const grass=mat(0x258c3e),roadmat=mat(0x555f63),white=mat(0xfff2c7);
-const wood=mat(0x85502b),darkwood=mat(0x50301d),trunk=mat(0x704222);
-const leaf=mat(0x18853a),leaf2=mat(0x239e46),brown=mat(0xa95827);
-const mane=mat(0x39241b),dark=mat(0x44271b),whiteMat=mat(0xffffff);
-function box(p,x,y,z,a,b,c,m){
- const o=new THREE.Mesh(new THREE.BoxGeometry(a,b,c),m);
- o.position.set(x,y,z);o.castShadow=true;o.receiveShadow=true;p.add(o);return o;
-}
-function ball(p,x,y,z,a,b,c,m){
- const o=new THREE.Mesh(new THREE.SphereGeometry(1,12,10),m);
- o.position.set(x,y,z);o.scale.set(a,b,c);o.castShadow=true;p.add(o);return o;
-}
-function cyl(p,x,y,z,a,b,h,m){
- const o=new THREE.Mesh(new THREE.CylinderGeometry(a,b,h,10),m);
- o.position.set(x,y,z);o.castShadow=true;p.add(o);return o;
-}
-box(scene,0,-.32,-48,200,.3,220,grass);
-box(scene,0,-.12,-55,10,.12,220,roadmat);
-for(const x of [-5.05,5.05])box(scene,x,.02,-55,.09,.04,220,white);
-const stripes=[];
-for(let z=5;z>-180;z-=5)stripes.push(box(scene,0,.01,z,.12,.025,2.1,white));
-function tree(x,z){
- const g=new THREE.Group();scene.add(g);g.position.set(x,0,z);
- cyl(g,0,.7,0,.18,.25,1.4,trunk);
- ball(g,0,1.85,0,.78,.86,.76,leaf);
- ball(g,-.32,2.05,0,.5,.56,.5,leaf2);
- ball(g,.35,2.22,-.12,.49,.52,.5,leaf);
- return g;
-}
-const trees=[];
-for(let z=8;z>-190;z-=5){
- trees.push(tree(-7.5-Math.random()*1.5,z));
- trees.push(tree(7.5+Math.random()*1.5,z-2));
- for(const x of [-5.8,5.8])box(scene,x,.42,z,.12,.84,.12,wood);
-}
-function cloud(x,y,z){
- const g=new THREE.Group();scene.add(g);g.position.set(x,y,z);
- const cm=mat(0xffffff);
- ball(g,0,0,0,1.3,.42,.6,cm);
- ball(g,-.7,.12,0,.7,.5,.55,cm);
- ball(g,.6,.18,0,.75,.55,.58,cm);return g;
-}
-const clouds=[];
-for(let i=0;i<7;i++)clouds.push(cloud(-17+Math.random()*34,10+Math.random()*5,-20-Math.random()*100));
 
-function makeHorse(){
- const g=new THREE.Group();scene.add(g);
- ball(g,0,1.45,.2,.62,.7,.95,brown);
- ball(g,0,2.05,-.42,.28,.65,.3,brown);
- ball(g,0,2.55,-.72,.39,.43,.43,brown);
- ball(g,0,2.4,-1.03,.31,.22,.38,brown);
- ball(g,0,2.34,-1.32,.25,.16,.18,dark);
- for(const x of [-.24,.24]){
-  ball(g,x,2.99,-.7,.105,.29,.12,mane);
-  ball(g,x*1.65,2.62,-1.02,.075,.085,.045,whiteMat);
-  ball(g,x*1.65,2.62,-1.06,.036,.045,.025,dark);
- }
- ball(g,0,2.72,-.45,.29,.24,.2,mane);
- ball(g,0,2.27,-.35,.2,.42,.2,mane);
- ball(g,0,1.94,.5,.18,.18,.58,mane);
- box(g,0,2.04,.18,.49,.12,.48,darkwood);
- const legs=[];
- for(const x of [-.39,.39])for(const z of [-.35,.75]){
-  const leg=new THREE.Group();leg.position.set(x,1,z);g.add(leg);
-  cyl(leg,0,-.43,0,.105,.13,.86,brown);
-  box(leg,0,-.86,-.04,.22,.16,.3,mane);legs.push(leg);
- }
- g.userData.legs=legs;g.position.set(0,0,3);return g;
+function setAudio(){
+    $('soundToggle').classList.toggle('off',!audioOn);
+    $('soundLabel').textContent=audioOn?'BẬT':'TẮT';
+    if(bg)bg.muted=!audioOn;
+    if(lose)lose.muted=!audioOn;
 }
-const horse=makeHorse();
 
-// Ông chủ quay mặt về phía ngựa, ở phía sau ngựa.
-function makeOwner(){
- const g=new THREE.Group();scene.add(g);
- const body=box(g,0,1.18,0,.8,.95,.4,mat(0x4d2420));
- ball(g,0,1.8,0,.45,.56,.38,mat(0x403027));
- ball(g,0,2.55,0,.31,.32,.31,mat(0xd6a16e));
- cyl(g,0,2.92,0,.39,.39,.16,mat(0x3b2116));
- for(const x of [-.3,.3]){
-  cyl(g,x,.45,0,.1,.12,.85,mat(0x292020));
-  cyl(g,x*1.4,1.45,-.1,.08,.09,.7,mat(0xd6a16e));
- }
- cyl(g,.48,.75,-.35,.34,.27,.52,wood);
- cyl(g,.48,1.02,-.35,.31,.31,.06,darkwood);
- // Mặt hướng về phía trước đường chạy, về phía ngựa ở trước mặt
- g.rotation.y=Math.PI;
- return g;
-}
-const owner=makeOwner();
-
-function obstacle(type,lane,z){
- const g=new THREE.Group();scene.add(g);g.position.set(lane*2.65,0,z);
- if(type==='barrel'){
-  cyl(g,0,.55,0,.43,.43,.95,wood);
-  for(const y of [.28,.75])cyl(g,0,y,0,.445,.445,.07,darkwood);
- }else if(type==='fence'){
-  for(const x of [-.65,.65])box(g,x,.55,0,.15,1.1,.16,darkwood);
-  box(g,0,.38,0,1.55,.16,.18,wood);box(g,0,.83,0,1.55,.16,.18,wood);
- }else if(type==='crate'||type==='fall'){
-  box(g,0,.55,0,.95,1.05,.95,wood);
-  box(g,0,.55,.49,.12,1.05,.04,darkwood);
-  if(type==='fall'){g.userData.falling=true;g.position.y=8;}
- }
- g.userData.type=type;g.userData.hit=false;g.userData.passed=false;return g;
-}
-let obstacles=[],running=false,paused=false,ended=false,soundOn=true;
-let hearts=3,score=0,elapsed=0,speed=1,lane=0,jumpY=0,jumpV=0;
-let bestScore=0,bestSpeed=1,spawnTimer=0,ownerDistance=15;
-let dayTimer=0,isNight=false,lookingBack=false,last=performance.now();
-
-function clearObstacles(){for(const o of obstacles)scene.remove(o);obstacles=[];}
-function playMusic(){
- if(!soundOn)return;
- $('loseMusic').pause();$('loseMusic').currentTime=0;
- $('music').play().catch(()=>{});
-}
-function stopMusic(){$('music').pause();}
-function updateSound(){$('sound').textContent=soundOn?'🔊 ÂM THANH: BẬT':'🔇 ÂM THANH: TẮT';}
-function resetGame(){
- clearObstacles();hearts=3;score=0;elapsed=0;speed=1;lane=0;
- jumpY=0;jumpV=0;spawnTimer=0;ownerDistance=15;dayTimer=0;isNight=false;lookingBack=false;
- horse.position.set(0,0,3);horse.rotation.set(0,0,0);
- owner.position.set(0,0,horse.position.z+ownerDistance);
- $('turnBack').innerHTML='↶<br>NHÌN SAU';
- $('score').textContent='0';$('spd').textContent='1.0';$('hearts').textContent='♥ ♥ ♥';
- $('end').style.display='none';$('pause').style.display='none';$('menu').style.display='none';
- $('hud').style.display='block';running=true;paused=false;ended=false;playMusic();
-}
-function home(){
- running=false;paused=false;ended=false;stopMusic();$('loseMusic').pause();
- $('hud').style.display='none';$('pause').style.display='none';$('end').style.display='none';$('menu').style.display='flex';
-}
-function finish(){
- if(ended)return;
- running=false;ended=true;stopMusic();
- if(soundOn&&$('loseMusic').getAttribute('src').length>35){
-  $('loseMusic').currentTime=0;$('loseMusic').play().catch(()=>{});
- }
- bestScore=Math.max(bestScore,score);bestSpeed=Math.max(bestSpeed,speed);
- $('stats').innerHTML='🏁 Điểm: <b>'+Math.floor(score)+'</b><br>⚡ Tốc độ đạt được: <b>'+speed.toFixed(1)+'x</b><br>🏆 Kỷ lục: <b>'+Math.floor(bestScore)+'</b>';
- $('end').style.display='flex';
-}
-function hit(o){
- if(o.userData.hit)return;o.userData.hit=true;hearts--;ownerDistance=Math.max(2.5,ownerDistance-4);
- $('hearts').textContent='♥ '.repeat(Math.max(0,hearts)).trim();
- $('toast').textContent='💥 Va chạm! Ông chủ đang đến gần!';$('toast').style.display='block';
- setTimeout(()=>$('toast').style.display='none',900);
- if(hearts<=0||ownerDistance<=2.5)finish();
-}
-function spawn(){
- const r=Math.random(),type=elapsed>35&&r<.23?'fall':r<.48?'barrel':r<.72?'crate':'fence';
- obstacles.push(obstacle(type,Math.floor(Math.random()*3)-1,-95));
-}
-function setLane(d){if(running&&!paused)lane=Math.max(-1,Math.min(1,lane+d));}
-function jump(){if(running&&!paused&&jumpY<=.01)jumpV=7.5;}
-
-$('left').onpointerdown=e=>{e.preventDefault();setLane(-1)};
-$('right').onpointerdown=e=>{e.preventDefault();setLane(1)};
-$('jump').onpointerdown=e=>{e.preventDefault();jump()};
-$('turnBack').onclick=()=>{
- if(!running||paused)return;
- lookingBack=!lookingBack;
- $('turnBack').innerHTML=lookingBack?'↷<br>PHÍA TRƯỚC':'↶<br>NHÌN SAU';
+$('soundToggle').onclick=()=>{
+    audioOn=!audioOn;
+    setAudio();
+    if(audioOn&&state==='play'&&bg)bg.play().catch(()=>{});
 };
-$('hamb').onclick=()=>{if(running&&!ended){paused=true;$('pause').style.display='flex';stopMusic();}};
-$('resume').onclick=()=>{paused=false;$('pause').style.display='none';playMusic();last=performance.now();};
-$('restart').onclick=resetGame;$('again').onclick=resetGame;
-$('home1').onclick=home;$('home2').onclick=home;$('start').onclick=resetGame;
-$('sound').onclick=()=>{
- soundOn=!soundOn;updateSound();
- if(!soundOn){stopMusic();$('loseMusic').pause();}
- else if(running&&!paused&&!ended)playMusic();
-};
-updateSound();
 
-window.addEventListener('keydown',e=>{
- if(e.key==='ArrowLeft'||e.key==='a')setLane(-1);
- if(e.key==='ArrowRight'||e.key==='d')setLane(1);
- if(e.key==='ArrowUp'||e.key===' ')jump();
- if(e.key==='r'||e.key==='R')lookingBack=!lookingBack;
- if(e.key==='Escape'&&running&&!paused){paused=true;$('pause').style.display='flex';stopMusic();}
+function menu(title,sub,desc,button){
+    $('title').textContent=title;
+    $('subtitle').textContent=sub;
+    $('description').innerHTML=desc;
+    $('start').textContent=button;
+    $('center').style.display='block';
+    $('controls').style.display='none';
+    $('tip').style.display='none';
+    $('menuPanel').style.display='none';
+}
+
+function startGame(){
+    state='play';
+    lane=0;
+    jumpY=0;
+    jumpV=0;
+    hearts=3;
+    hitCooldown=0;
+    distance=0;
+    speed=10;
+    spawnTimer=1;
+    fallTimer=4;
+    dayTimer=0;
+    night=false;
+
+    // Đưa ông chủ ra xa phía sau khi bắt đầu lại.
+    pursuer.position.set(0,0,12);
+    pursuer.visible=true;
+
+    for(const o of obstacles)scene.remove(o);
+    obstacles.length=0;
+
+    for(const o of falling)scene.remove(o);
+    falling.length=0;
+
+    for(let z=-20;z>-90;z-=13)spawnObstacle(z);
+
+    stable.visible=false;
+    camera.position.set(0,1.62,3);
+    camera.rotation.set(0,0,0);
+
+    $('center').style.display='none';
+    $('controls').style.display='flex';
+    $('tip').style.display='block';
+    $('menuPanel').style.display='none';
+    $('hearts').textContent='♥ ♥ ♥';
+    $('score').textContent='0';
+    $('speed').textContent='10';
+
+    if(lose){
+        lose.pause();
+        lose.currentTime=0;
+    }
+
+    if(bg&&audioOn){
+        bg.currentTime=0;
+        bg.play().catch(()=>{});
+    }
+}
+
+function showMenu(){
+    state='menu';
+    stable.visible=true;
+    pursuer.visible=false;
+
+    if(bg)bg.pause();
+    if(lose){
+        lose.pause();
+        lose.currentTime=0;
+    }
+
+    scene.background.set(0xf5a2a0);
+    scene.fog.color.set(0xf5a2a0);
+    sun.intensity=2.2;
+    camera.position.set(0,1.62,3);
+    camera.rotation.set(0,0,0);
+
+    menu(
+        'RUNAWAY',
+        'FIRST-PERSON 3D ESCAPE',
+        'Bạn là một chú ngựa vừa xổng chuồng!<br>Né vật cản và đừng để ông chủ bắt được.',
+        'BẮT ĐẦU 🐴'
+    );
+}
+
+function endGame(){
+    if(state!=='play')return;
+
+    // Chỉ gọi hàm này khi hết đủ 3 tim.
+    state='over';
+
+    if(bg)bg.pause();
+
+    if(lose&&audioOn){
+        lose.currentTime=0;
+        lose.play().catch(()=>{});
+    }
+
+    const record=Math.max(
+        Number(localStorage.getItem('runawayBest')||0),
+        Math.floor(distance)
+    );
+    localStorage.setItem('runawayBest',String(record));
+
+    menu(
+        'BỊ BẮT RỒI!',
+        'RUN ENDED',
+        `Quãng đường: <b>${Math.floor(distance)} m</b><br>Tốc độ cao nhất: <b>${Math.floor(speed)} km/h</b><br>Kỷ lục: <b>${record} m</b>`,
+        'CHẠY LẠI 🔁'
+    );
+
+    pursuer.position.set(camera.position.x,0,5.8);
+    pursuer.visible=true;
+}
+
+$('start').onclick=startGame;
+
+$('menuButton').onclick=()=>{
+    if($('menuPanel').style.display==='block'){
+        $('menuPanel').style.display='none';
+        return;
+    }
+
+    $('menuPanel').style.display='block';
+
+    if(state==='play'){
+        state='paused';
+        if(bg)bg.pause();
+        $('resume').style.display='block';
+    }
+};
+
+$('resume').onclick=()=>{
+    if(state==='paused'){
+        state='play';
+        if(bg&&audioOn)bg.play().catch(()=>{});
+        $('menuPanel').style.display='none';
+    }
+};
+
+$('restart').onclick=startGame;
+$('home').onclick=showMenu;
+
+function move(d){
+    if(state==='play'){
+        lane=Math.max(-1,Math.min(1,lane+d));
+    }
+}
+
+function jump(){
+    if(state==='play'&&jumpY<=.02)jumpV=7.7;
+}
+
+$('left').onpointerdown=e=>{
+    e.preventDefault();
+    move(-1);
+};
+
+$('right').onpointerdown=e=>{
+    e.preventDefault();
+    move(1);
+};
+
+$('jump').onpointerdown=e=>{
+    e.preventDefault();
+    jump();
+};
+
+addEventListener('keydown',e=>{
+    if(e.key==='ArrowLeft'||e.key.toLowerCase()==='a')move(-1);
+    if(e.key==='ArrowRight'||e.key.toLowerCase()==='d')move(1);
+    if(e.key==='ArrowUp'||e.key===' '||e.key.toLowerCase()==='w')jump();
+    if(e.key==='Escape'&&state==='play')$('menuButton').click();
 });
 
-function moveWorld(dt){
- const travel=speed*dt*12;
- for(const s of stripes){s.position.z+=travel;if(s.position.z>8)s.position.z-=190;}
- for(const t of trees){t.position.z+=travel;if(t.position.z>10)t.position.z-=195;}
- for(const c of clouds){c.position.x+=dt*.7;if(c.position.x>22)c.position.x=-22;}
- for(const o of obstacles){
-  o.position.z+=travel;
-  if(o.userData.falling)o.position.y=Math.max(0,o.position.y-dt*(4+speed));
-  if(!o.userData.hit&&Math.abs(o.position.z-horse.position.z)<1.45&&Math.abs(o.position.x-horse.position.x)<1.25){
-   if(!(jumpY>1&&o.userData.type!=='fall'))hit(o);
-  }
-  if(!o.userData.passed&&o.position.z>horse.position.z+1){o.userData.passed=true;score+=5;}
- }
- obstacles=obstacles.filter(o=>{if(o.position.z>12){scene.remove(o);return false;}return true;});
+// Chỉ tính va chạm ở vùng ngay trước người chơi.
+function hit(o,t=1){
+    return Math.abs(o.position.z-1.5)<.8 &&
+           Math.abs(o.position.x-camera.position.x)<t;
 }
-function lighting(dt){
- dayTimer+=dt;if(dayTimer>150){dayTimer=0;isNight=!isNight;}
- scene.background.lerp(new THREE.Color(isNight?0x111d3b:0x73d8f7),dt*.18);
- scene.fog.color.copy(scene.background);
- grass.color.lerp(new THREE.Color(isNight?0x102b2c:0x258c3e),dt*.18);
- roadmat.color.lerp(new THREE.Color(isNight?0x252b3b:0x555f63),dt*.18);
- sun.intensity=THREE.MathUtils.lerp(sun.intensity,isNight?.35:2,dt*.2);
-}
+
+let last=performance.now();
+
 function animate(now){
- requestAnimationFrame(animate);
- const dt=Math.min((now-last)/1000,.05);last=now;
- if(running&&!paused&&!ended){
-  elapsed+=dt;speed=Math.min(3.5,1+elapsed*.025);score+=dt*speed*2;
-  spawnTimer+=dt;
-  if(spawnTimer>Math.max(.48,1.45-elapsed*.008)){spawnTimer=0;spawn();}
-  moveWorld(dt);lighting(dt);
-  ownerDistance-=dt*(.12+speed*.025);
-  owner.position.z=horse.position.z+ownerDistance;
-  owner.position.x=THREE.MathUtils.lerp(owner.position.x,horse.position.x,dt*.12);
-  if(ownerDistance<5)finish();
-  horse.position.x=THREE.MathUtils.lerp(horse.position.x,lane*2.65,dt*8);
-  if(jumpV!==0||jumpY>0){jumpY+=jumpV*dt;jumpV-=17*dt;if(jumpY<0){jumpY=0;jumpV=0;}}
-  horse.position.y=jumpY;
-  horse.userData.legs.forEach((leg,i)=>leg.rotation.x=Math.sin(elapsed*speed*10+(i%2)*Math.PI)*.48);
-  $('score').textContent=Math.floor(score);$('spd').textContent=speed.toFixed(1);
- }
- // Bình thường nhìn ngựa từ phía trước; nhấn nút sẽ quay ra sau nhìn ông chủ
- const desiredZ=lookingBack?horse.position.z-6:horse.position.z+9.5;
- const desiredX=lookingBack?horse.position.x:horse.position.x*.35;
- camera.position.x=THREE.MathUtils.lerp(camera.position.x,desiredX,Math.min(1,dt*5));
- camera.position.y=THREE.MathUtils.lerp(camera.position.y,lookingBack?4.3:4.2,Math.min(1,dt*5));
- camera.position.z=THREE.MathUtils.lerp(camera.position.z,desiredZ,Math.min(1,dt*5));
- const lookZ=lookingBack?owner.position.z-3:horse.position.z-12;
- camera.lookAt(lookingBack?owner.position.x:horse.position.x,lookingBack?1.5:1.2,lookZ);
- renderer.render(scene,camera);
+    requestAnimationFrame(animate);
+
+    const dt=Math.min(.04,(now-last)/1000);
+    last=now;
+    clock+=dt;
+
+    if(state==='menu'){
+        owner.rotation.x=-.12+Math.sin(clock*1.7)*.035;
+        armL.rotation.z=-.85+Math.sin(clock*2)*.12;
+        armR.rotation.z=.85-Math.sin(clock*2)*.12;
+        hot.position.y=Math.sin(clock*2.2)*.025;
+        camera.position.x=Math.sin(clock*.35)*.04;
+    }
+
+    else if(state==='play'){
+        speed=Math.min(27,speed+dt*.22);
+        distance+=speed*dt*.75;
+
+        $('score').textContent=Math.floor(distance);
+        $('speed').textContent=Math.floor(speed);
+
+        camera.position.x+=(lane*2.35-camera.position.x)*Math.min(1,dt*8);
+
+        jumpV-=19*dt;
+        jumpY=Math.max(0,jumpY+jumpV*dt);
+        if(jumpY===0)jumpV=0;
+        camera.position.y=1.62+jumpY;
+
+        for(const d of dashes){
+            d.position.z+=speed*dt;
+            if(d.position.z>8)d.position.z-=125;
+        }
+
+        spawnTimer-=dt;
+        if(spawnTimer<=0){
+            spawnObstacle(-100);
+            spawnTimer=Math.max(.62,1.65-distance/240);
+        }
+
+        fallTimer-=dt;
+        if(fallTimer<=0){
+            spawnFalling();
+            fallTimer=Math.max(1.8,4.6-distance/180)+Math.random()*1.4;
+        }
+
+        let collided=false;
+
+        for(const o of obstacles){
+            o.position.z+=speed*dt;
+            if(hit(o,1.05)&&jumpY<.82)collided=true;
+        }
+
+        for(const o of falling){
+            o.position.z+=speed*dt;
+            o.userData.vy+=14*dt;
+            o.position.y=Math.max(.45,o.position.y-o.userData.vy*dt);
+            if(hit(o,.9)&&jumpY<1.1)collided=true;
+        }
+
+        for(let i=obstacles.length-1;i>=0;i--){
+            if(obstacles[i].position.z>9){
+                scene.remove(obstacles[i]);
+                obstacles.splice(i,1);
+            }
+        }
+
+        for(let i=falling.length-1;i>=0;i--){
+            if(falling[i].position.z>9){
+                scene.remove(falling[i]);
+                falling.splice(i,1);
+            }
+        }
+
+        // Miễn va chạm ngắn để một vật cản không trừ nhiều tim liên tiếp.
+        if(hitCooldown>0){
+            hitCooldown=Math.max(0,hitCooldown-dt);
+        }
+
+        // Trừ tim đúng một lần cho mỗi lần va chạm.
+        if(collided&&hitCooldown<=0&&state==='play'){
+            hearts--;
+            hitCooldown=1.15;
+            speed=Math.max(7,speed-2.5);
+
+            $('hearts').textContent=
+                hearts>0?'♥ '.repeat(hearts).trim():'♡ ♡ ♡';
+
+            // Hết đủ 3 tim mới kết thúc game.
+            if(hearts<=0){
+                endGame();
+            }
+        }
+
+        // Ông chủ vẫn ở phía sau và không tự gây thua.
+        // Không kéo ông chủ lại gần mỗi khung hình nữa.
+        pursuer.position.x+=(camera.position.x-pursuer.position.x)*dt*.5;
+
+        dayTimer+=dt;
+        if(dayTimer>=150){
+            dayTimer=0;
+            night=!night;
+            scene.background.set(night?0x17233f:0xf5a2a0);
+            scene.fog.color.set(night?0x17233f:0xf5a2a0);
+            sun.intensity=night?.45:2.2;
+        }
+    }
+
+    renderer.render(scene,camera);
 }
-camera.position.set(0,4.2,12);camera.lookAt(0,1,0);
+
+setAudio();
+showMenu();
 requestAnimationFrame(animate);
-window.addEventListener('resize',()=>{
- camera.aspect=root.clientWidth/root.clientHeight;camera.updateProjectionMatrix();
- renderer.setSize(root.clientWidth,root.clientHeight);
+
+addEventListener('resize',()=>{
+    camera.aspect=innerWidth/innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setPixelRatio(Math.min(devicePixelRatio,1.35));
+    renderer.setSize(innerWidth,innerHeight);
+});
+
+document.addEventListener('visibilitychange',()=>{
+    if(document.hidden&&state==='play')$('menuButton').click();
 });
 </script>
 </body>
-</html>
-"""
+</html>'''
 
-html = html.replace("@@MUSIC@@", music)
-html = html.replace("@@LOSE@@", lose_music)
-components.html(html, height=850, scrolling=False)
+html = html.replace('__MUSIC__', music).replace('__LOSE__', lose)
+
+st.markdown(
+    "<p style='text-align:center;color:#cbd5e1;font-size:12px'>"
+    "Bản thử nghiệm 3D · Nhạc hoạt động khi có An83.mp3 và thua.mp3 "
+    "trong thư mục cùng file Python.</p>",
+    unsafe_allow_html=True
+)
+
+components.html(html, height=760, scrolling=False)
