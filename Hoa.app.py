@@ -1,57 +1,111 @@
 import streamlit as st
 import streamlit.components.v1 as components
-from pathlib import Path
-import base64
 
-st.set_page_config(page_title="RUNAWAY 3D", page_icon="🐎", layout="wide")
-base = Path(__file__).parent
+st.set_page_config(page_title="Game đập chuột", page_icon="🐭", layout="centered")
 
-def b64(name):
-    p = base / name
-    return base64.b64encode(p.read_bytes()).decode() if p.exists() else ""
+game = r"""
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;font-family:Arial,sans-serif;background:#b5f58d;overflow:hidden;color:white;user-select:none}
+#game{width:100%;max-width:680px;height:760px;max-height:95vh;min-height:520px;margin:auto;position:relative;overflow:hidden;border:6px solid #c9ff9f;border-radius:25px;background:radial-gradient(ellipse,#91e85d,#54b83d 70%,#318b2b);box-shadow:0 0 24px #83ff68}
+#menu,#gameover,#pauseScreen{position:absolute;inset:0;z-index:20;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:22px;background:rgba(39,132,35,.3);backdrop-filter:blur(3px)}
+#menu h1{font-size:clamp(32px,8vw,53px);font-style:italic;font-weight:1000;line-height:1.2;text-shadow:0 0 5px #65ff47,0 0 15px #4dff36,3px 4px #258b28;margin:0 0 12px}
+button,select{border:3px solid #d6ffb5;border-radius:16px;padding:12px 16px;font-size:16px;font-weight:bold;color:#24762c;background:#f3ffe7;cursor:pointer}
+#startBtn{background:linear-gradient(#e0ff9a,#9bff6a);font-size:22px;padding:15px 38px;margin-top:15px;box-shadow:0 0 20px #d4ff9a}
+#hud{position:absolute;top:10px;left:10px;right:10px;display:flex;align-items:center;justify-content:space-between;gap:5px;z-index:5}
+.hudBox{border:2px solid white;border-radius:13px;background:rgba(23,98,30,.78);padding:8px;font-size:15px;font-weight:bold}
+#menuBtn{color:white;background:rgba(24,91,25,.8);border:2px solid white;padding:6px 11px;font-size:22px}
+#field{position:absolute;top:90px;bottom:18px;left:5%;right:5%;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:repeat(3,minmax(0,1fr));gap:10px 7px}
+.hole{position:relative;min-width:0;min-height:0;display:flex;align-items:flex-end;justify-content:center;overflow:hidden;cursor:pointer;touch-action:manipulation}
+.hole:before{content:"";position:absolute;bottom:7%;left:4%;width:92%;height:34%;border-radius:50%;background:radial-gradient(ellipse,#173719 0%,#2b4e21 62%,#6cbd43 66%,#8de25c 75%);border:3px solid #b7f57e;z-index:2}
+.mouse{position:absolute;z-index:1;bottom:16%;left:50%;transform:translate(-50%,110%);font-size:clamp(42px,10vw,66px);line-height:1;transition:transform .13s;padding:5px}
+.hole.up .mouse{transform:translate(-50%,-10%)}
+.hole.hit .mouse{transform:translate(-50%,120%) rotate(20deg) scale(.65)}
+#countdown{position:absolute;inset:0;display:none;align-items:center;justify-content:center;font-size:100px;font-weight:1000;text-shadow:0 0 25px #54ff34,3px 4px #267d25;z-index:12;pointer-events:none}
+#message{position:absolute;top:44%;width:100%;text-align:center;font-size:30px;font-weight:1000;text-shadow:0 2px 5px #256c21;z-index:10;pointer-events:none}
+#gameover h2,#pauseScreen h2{font-size:34px;margin:0 0 12px}
+.hidden{display:none!important}
+#soundBtn{position:absolute;bottom:8px;right:8px;z-index:8;padding:7px 10px;font-size:14px;background:rgba(29,100,31,.8);color:white;border:2px solid white}
+#game.shake{animation:shake .22s linear}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}50%{transform:translateX(5px)}75%{transform:translateX(-3px)}}
+@media(max-height:650px){#game{height:95vh;min-height:0}#field{top:78px}.hudBox{padding:6px;font-size:13px}}
+</style>
+</head>
+<body>
+<div id="game">
+  <div id="menu">
+    <h1>🐭 Game đập chuột 🐭</h1><p><b>🌿 BÃI CỎ VUI NHỘN 🌿</b></p>
+    <p>Chọn độ khó:</p>
+    <select id="difficulty"><option value="3000">Dễ - 3 giây</option><option value="2500">Vừa - 2,5 giây</option><option value="1000">Khó - 1 giây</option></select>
+    <button id="startBtn">▶ BẮT ĐẦU</button>
+    <p>🔨 Chạm chuột trên lỗ để ghi điểm!</p><p>❤️ 3 mạng · ⏱️ 60 giây</p>
+  </div>
+  <div id="hud" class="hidden"><div class="hudBox" id="lives">❤️❤️❤️</div><div class="hudBox">⭐ <span id="score">0</span></div><div class="hudBox">⏱️ <span id="time">60</span>s</div><button id="menuBtn">☰</button></div>
+  <div id="field" class="hidden"></div><div id="countdown">3</div><div id="message"></div>
+  <button id="soundBtn">🔊 Âm thanh: Bật</button>
+  <div id="pauseScreen" class="hidden"><h2>⏸️ Đang tạm dừng</h2><button id="resumeBtn">▶ Chơi tiếp</button><br><button id="homeBtn">🏠 Về menu</button></div>
+  <div id="gameover" class="hidden"><h2 id="endTitle">⏰ Hết thời gian!</h2><p>Điểm: <span id="finalScore">0</span></p><p>🏆 Kỷ lục: <span id="bestScore">0</span></p><button id="retryBtn">🔄 Chơi lại</button><br><button id="backBtn">🏠 Về menu</button></div>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+let score=0,lives=3,timeLeft=60,best=0,delay=3000,running=false,paused=false,soundOn=true,active=-1;
+let spawnTimer=null,clockTimer=null,mouseTimer=null,countTimer=null,audioCtx=null,token=0,lifeLeft=0,mouseStart=0;
+try{best=Number(localStorage.getItem('dapChuotBest')||0)}catch(e){}
+const holes=[];
+for(let i=0;i<9;i++){
+ const h=document.createElement('div');h.className='hole';h.innerHTML='<div class="mouse">🐭</div>';h.dataset.index=i;$('field').appendChild(h);holes.push(h);
+ h.addEventListener('pointerdown',e=>{if(!running||paused||!h.classList.contains('up')||Number(h.dataset.token)!==token)return;e.preventDefault();hit(h)});
+}
+function beep(freq=500,dur=.08){if(!soundOn)return;try{audioCtx=audioCtx||new(window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume();let o=audioCtx.createOscillator(),g=audioCtx.createGain();o.frequency.value=freq;g.gain.value=.05;o.connect(g);g.connect(audioCtx.destination);o.start();g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+dur);o.stop(audioCtx.currentTime+dur)}catch(e){}}
+function clearTimers(){clearTimeout(spawnTimer);clearInterval(clockTimer);clearTimeout(mouseTimer);clearInterval(countTimer);spawnTimer=clockTimer=mouseTimer=countTimer=null}
+function clearMice(){holes.forEach(h=>{h.classList.remove('up','hit');h.dataset.token='';h.querySelector('.mouse').textContent='🐭'});active=-1}
+function update(){ $('score').textContent=score;$('time').textContent=timeLeft;$('lives').textContent='❤️'.repeat(Math.max(0,lives))+'🖤'.repeat(3-Math.max(0,lives))}
+function start(){
+ clearTimers();clearMice();score=0;lives=3;timeLeft=60;delay=Number($('difficulty').value);running=false;paused=false;
+ $('menu').classList.add('hidden');$('gameover').classList.add('hidden');$('pauseScreen').classList.add('hidden');$('hud').classList.remove('hidden');$('field').classList.remove('hidden');$('countdown').style.display='flex';update();
+ let n=3;$('countdown').textContent=n;beep(440);
+ countTimer=setInterval(()=>{n--;if(n>0){$('countdown').textContent=n;beep(440)}else{clearInterval(countTimer);countTimer=null;$('countdown').style.display='none';begin()}},1000)
+}
+function begin(){running=true;paused=false;schedule(250);clockTimer=setInterval(()=>{if(!running||paused)return;timeLeft--;update();if(timeLeft<=0)end('time')},1000)}
+function schedule(wait){
+ clearTimeout(spawnTimer);spawnTimer=setTimeout(()=>{
+  if(!running||paused)return;
+  const options=holes.map((h,i)=>i).filter(i=>i!==active);const idx=options[Math.floor(Math.random()*options.length)],h=holes[idx];
+  active=idx;token++;h.dataset.token=String(token);h.classList.remove('hit');h.classList.add('up');
+  const special=Math.random()<.12;h.querySelector('.mouse').textContent=special?'🐹':'🐭';h.dataset.points=special?'3':'1';
+  mouseStart=Date.now();lifeLeft=delay;
+  mouseTimer=setTimeout(()=>{if(!running||paused||active!==idx)return;h.classList.remove('up');active=-1;mouseTimer=null;lives--;update();beep(180,.13);if(lives<=0)end('lives');else schedule(250)},lifeLeft);
+ },wait)
+}
+function hit(h){
+ if(!running||paused||active<0)return;clearTimeout(mouseTimer);mouseTimer=null;
+ const pts=Number(h.dataset.points||1);score+=pts;active=-1;h.classList.remove('up');h.classList.add('hit');beep(pts===3?850:620);
+ $('game').classList.remove('shake');void $('game').offsetWidth;$('game').classList.add('shake');$('message').textContent=pts===3?'+3 ĐIỂM! ✨':'+1 ĐIỂM!';
+ setTimeout(()=>{$('message').textContent='';h.classList.remove('hit');h.querySelector('.mouse').textContent='🐭'},300);update();schedule(280)
+}
+function end(reason){
+ if(!running)return;running=false;paused=false;clearTimers();clearMice();$('countdown').style.display='none';$('pauseScreen').classList.add('hidden');$('gameover').classList.remove('hidden');
+ $('finalScore').textContent=score;if(score>best){best=score;try{localStorage.setItem('dapChuotBest',String(best))}catch(e){}}$('bestScore').textContent=best;$('endTitle').textContent=reason==='lives'?'💔 Hết mạng!':'⏰ Hết thời gian!';beep(240,.25)
+}
+function pause(){if(!running||paused)return;paused=true;if(active>=0){lifeLeft=Math.max(0,lifeLeft-(Date.now()-mouseStart))}clearTimeout(spawnTimer);clearTimeout(mouseTimer);$('pauseScreen').classList.remove('hidden')}
+function resume(){if(!running||!paused)return;paused=false;$('pauseScreen').classList.add('hidden');if(active>=0){mouseStart=Date.now();mouseTimer=setTimeout(()=>{if(!running||paused||active<0)return;holes[active].classList.remove('up');active=-1;lives--;update();if(lives<=0)end('lives');else schedule(250)},lifeLeft)}else schedule(300)}
+function home(){running=false;paused=false;clearTimers();clearMice();$('countdown').style.display='none';$('menu').classList.remove('hidden');$('hud').classList.add('hidden');$('field').classList.add('hidden');$('gameover').classList.add('hidden');$('pauseScreen').classList.add('hidden');$('message').textContent=''}
+$('startBtn').addEventListener('click',start);$('retryBtn').addEventListener('click',start);$('backBtn').addEventListener('click',home);$('homeBtn').addEventListener('click',home);$('menuBtn').addEventListener('click',()=>paused?resume():pause());$('resumeBtn').addEventListener('click',resume);
+$('soundBtn').addEventListener('click',()=>{soundOn=!soundOn;$('soundBtn').textContent=soundOn?'🔊 Âm thanh: Bật':'🔇 Âm thanh: Tắt';if(soundOn)beep(550)});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(paused)resume();else pause()}});
+update();
+</script>
+</body>
+</html>
+"""
 
-music, lose = b64("An83.mp3"), b64("thua.mp3")
-st.markdown("<style>.stApp{background:#071c17}header[data-testid='stHeader'],footer{display:none}.block-container{padding:0!important;max-width:100%!important}</style>", unsafe_allow_html=True)
-
-html = r'''<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><style>
-*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#071c17;color:#fff;font-family:Arial}#game{position:relative;width:100%;height:100dvh;min-height:520px;overflow:hidden;background:#70d9f5}canvas{display:block;position:absolute;inset:0;z-index:0}#hud{display:none;position:absolute;inset:0;z-index:2;pointer-events:none}.top{position:absolute;top:10px;left:10px;right:10px;display:flex;justify-content:space-between;gap:5px;align-items:center}.pill,button{border:1px solid #ffffff66;border-radius:12px;background:#062e39ed;color:#fff;padding:9px;font-weight:bold}.pill{font-size:13px}button{cursor:pointer;touch-action:manipulation;font-size:15px}.top button,.controls button{pointer-events:auto}.controls{position:absolute;bottom:15px;left:12px;right:12px;display:flex;align-items:end;justify-content:space-between;gap:8px}.group{display:flex;gap:8px}.ctrl{width:60px;height:62px;font-size:25px;box-shadow:0 4px #031a20}.jump{background:#ffd34e;color:#34230a;width:76px;font-size:14px}.turn{font-size:12px;width:76px;height:60px}#menu,#pause,#end{position:absolute;z-index:5;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:18px;background:linear-gradient(#061a2533,#031a24a8)}#pause,#end{display:none}.panel{width:min(92%,360px);padding:22px;border:2px solid #a8f4ff99;border-radius:24px;background:linear-gradient(145deg,#073d49f5,#061e2df5);box-shadow:0 0 35px #45d8ed55}.logo{font-size:clamp(38px,9vw,60px);font-weight:1000;letter-spacing:1px;text-shadow:3px 4px #a34319}.sub{letter-spacing:5px;color:#a9f5ff;font-weight:bold;margin:4px 0 16px}.action{width:100%;padding:13px;margin:5px 0;background:#ffd34e;color:#382408;border:0;font-size:16px}.secondary{background:#104654;color:white;border:1px solid #ffffff55}#toast{display:none;position:absolute;top:62px;left:50%;transform:translateX(-50%);background:#062e39;padding:9px 12px;border-radius:10px;white-space:nowrap;font-size:13px}#quiz{display:none;position:absolute;z-index:4;left:50%;top:50%;transform:translate(-50%,-50%);width:min(92%,360px);background:#062b38f5;border:2px solid #ffe06b;border-radius:20px;padding:18px;text-align:center;box-shadow:0 0 25px #0008;pointer-events:auto}#question{font-size:18px;font-weight:bold;margin:8px 0 12px}.answer{display:block;width:100%;margin:7px 0;background:#104653;color:white;padding:12px}.answer:active{background:#ffd34e;color:#222}.small{font-size:12px;color:#c9f7ff}@media(max-width:390px){.pill{font-size:11px;padding:7px}.ctrl{width:54px;height:58px}.turn{width:67px;font-size:11px}}
-</style></head><body><div id="game">
-<div id="hud"><div class="top"><div class="pill">🏁 <span id="score">0</span> m</div><div class="pill">⭐ <span id="stars">0</span></div><div class="pill">🏆 <span id="best">0</span></div><button id="hamb">☰</button></div><div id="toast"></div><div class="controls"><div class="group"><button class="ctrl" id="left">◀</button><button class="ctrl" id="right">▶</button></div><button class="ctrl turn" id="turn">↶<br>QUAY ĐẦU</button><button class="ctrl jump" id="jump">↑<br>NHẢY</button></div></div>
-<div id="menu"><div class="panel"><div class="logo">🐎 RUNAWAY</div><div class="sub">3D HORSE RUN</div><p>Vượt ải Toán học — chạy nhanh hơn ông chủ!</p><p>🏆 Kỷ lục: <b id="bestMenu">0</b> m</p><button class="action" id="start">▶ BẮT ĐẦU</button><button class="action secondary" id="sound">🔊 ÂM THANH: BẬT</button><div class="small">Nhặt ⭐ tăng tốc · Trả lời đúng để qua ải</div></div></div>
-<div id="pause"><div class="panel"><h2>⏸ TẠM DỪNG</h2><button class="action" id="resume">▶ TIẾP TỤC</button><button class="action secondary" id="restart">↻ CHƠI LẠI</button><button class="action secondary" id="home1">⌂ MENU</button></div></div>
-<div id="end"><div class="panel"><h2>🐎 BỊ BẮT RỒI!</h2><p id="endtext">Ông chủ đã đuổi kịp!</p><p>🏁 Điểm: <b id="finalscore">0</b> m</p><p>🏆 Kỷ lục: <b id="finalbest">0</b> m</p><button class="action" id="again">↻ CHƠI LẠI</button><button class="action secondary" id="home2">⌂ MENU</button></div></div>
-<div id="quiz"><div class="small">🧠 ẢI TOÁN CẤP 2</div><div id="question"></div><div id="answers"></div><div class="small">Chọn đáp án đúng để vượt qua cổng!</div></div></div>
-<audio id="music" loop src="data:audio/mpeg;base64,@@MUSIC@@"></audio><audio id="loseMusic" src="data:audio/mpeg;base64,@@LOSE@@"></audio>
-<script type="module">
-let THREE;try{THREE=await import('https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js')}catch(e){try{THREE=await import('https://unpkg.com/three@0.160.0/build/three.module.js')}catch(e2){document.getElementById('menu').innerHTML='<div class="panel"><h2>Không tải được cảnh 3D</h2><p>Hãy kiểm tra mạng rồi tải lại trang.</p></div>';throw e2}}
-const $=id=>document.getElementById(id),root=$('game'),scene=new THREE.Scene();scene.background=new THREE.Color(0x6bd7f0);scene.fog=new THREE.Fog(0x6bd7f0,35,150);
-const camera=new THREE.PerspectiveCamera(65,root.clientWidth/root.clientHeight,.1,250),renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,1.6));renderer.setSize(root.clientWidth,root.clientHeight);renderer.shadowMap.enabled=true;root.prepend(renderer.domElement);
-scene.add(new THREE.HemisphereLight(0xcaf1ff,0x52713a,2));const sun=new THREE.DirectionalLight(0xffefc8,2);sun.position.set(-8,18,7);sun.castShadow=true;scene.add(sun);
-const mat=c=>new THREE.MeshStandardMaterial({color:c,roughness:.85});const grass=mat(0x218744),road=mat(0x444d56),line=mat(0xfff0c0),brown=mat(0xa95727),mane=mat(0x382219),wood=mat(0x80502d),leaf=mat(0x16803a),gold=mat(0xffd21c);
-function box(p,x,y,z,a,b,c,m){let o=new THREE.Mesh(new THREE.BoxGeometry(a,b,c),m);o.position.set(x,y,z);o.castShadow=true;p.add(o);return o}function ball(p,x,y,z,a,b,c,m){let o=new THREE.Mesh(new THREE.SphereGeometry(1,12,10),m);o.position.set(x,y,z);o.scale.set(a,b,c);o.castShadow=true;p.add(o);return o}function cyl(p,x,y,z,a,b,h,m){let o=new THREE.Mesh(new THREE.CylinderGeometry(a,b,h,10),m);o.position.set(x,y,z);o.castShadow=true;p.add(o);return o}
-box(scene,0,-.32,-48,200,.3,220,grass);box(scene,0,-.12,-55,10,.12,220,road);for(let x of [-5.05,5.05])box(scene,x,.01,-55,.08,.04,220,line);let stripes=[];for(let z=5;z>-190;z-=5)stripes.push(box(scene,0,.01,z,.12,.025,2,line));let trees=[];function tree(x,z){let g=new THREE.Group();g.position.set(x,0,z);scene.add(g);cyl(g,0,.7,0,.16,.22,1.4,wood);ball(g,0,1.8,0,.8,.9,.8,leaf);ball(g,-.3,2.1,0,.48,.52,.5,mat(0x2aa34b));return g}for(let z=8;z>-190;z-=6){trees.push(tree(-7.5,z),tree(7.5,z-2))}
-let clouds=[];for(let i=0;i<8;i++){let g=new THREE.Group();g.position.set(-18+Math.random()*36,10+Math.random()*5,-20-Math.random()*110);scene.add(g);ball(g,0,0,0,1.3,.4,.6,mat(0xeaffff));ball(g,.7,.1,0,.7,.45,.5,mat(0xeaffff));clouds.push(g)}
-function horseModel(){let g=new THREE.Group();scene.add(g);ball(g,0,1.45,.2,.62,.7,.95,brown);ball(g,0,2.05,-.42,.28,.65,.3,brown);ball(g,0,2.55,-.72,.39,.43,.43,brown);ball(g,0,2.4,-1.03,.31,.22,.38,brown);ball(g,0,2.34,-1.32,.25,.16,.18,mane);for(let x of [-.24,.24]){ball(g,x,2.99,-.7,.1,.28,.12,mane);ball(g,x*1.6,2.62,-1.06,.04,.05,.03,mat(0x171717))}ball(g,0,2.72,-.45,.29,.24,.2,mane);ball(g,0,1.94,.5,.18,.18,.58,mane);let legs=[];for(let x of [-.39,.39])for(let z of [-.35,.75]){let q=new THREE.Group();q.position.set(x,1,z);g.add(q);cyl(q,0,-.43,0,.1,.13,.86,brown);box(q,0,-.86,-.04,.22,.16,.3,mane);legs.push(q)}g.userData.legs=legs;g.position.set(0,0,3);return g}const horse=horseModel();
-function ownerModel(){let g=new THREE.Group();scene.add(g);box(g,0,1.18,0,.8,.95,.4,mat(0x4b2420));ball(g,0,1.8,0,.45,.56,.38,mat(0x403027));let face=mat(0xd6a16e);ball(g,0,2.55,0,.34,.36,.32,face);ball(g,0,2.43,-.28,.22,.1,.1,mat(0x8d4c42));ball(g,-.13,2.59,-.29,.035,.04,.025,mat(0x171717));ball(g,.13,2.59,-.29,.035,.04,.025,mat(0x171717));cyl(g,0,2.92,0,.39,.39,.16,mane);for(let x of [-.3,.3]){cyl(g,x,.45,0,.1,.12,.85,mat(0x292020));cyl(g,x*1.4,1.45,-.1,.08,.09,.7,face)}cyl(g,.48,.75,-.35,.34,.27,.52,wood);g.rotation.y=Math.PI;return g}const owner=ownerModel();
-let obstacles=[],stars=[],running=false,paused=false,ended=false,soundOn=true,score=0,elapsed=0,speed=1,lane=0,jumpY=0,jumpV=0,ownerDistance=17,boost=0,spawnT=0,starT=2,quizT=5,nightT=0,isNight=false,lookingBack=false,last=performance.now(),best=Number(localStorage.getItem('runawayBest')||0),quizOpen=false;
-const questions=[['3x+5=20, x bằng bao nhiêu?', ['3','5','7'],1],['Diện tích hình chữ nhật 6 cm × 4 cm là?', ['10 cm²','20 cm²','24 cm²'],2],['Số đối của -8 là?', ['-8','8','0'],1],['2/3 + 1/6 = ?', ['5/6','3/9','1/2'],0],['Góc vuông bằng bao nhiêu độ?', ['45°','90°','180°'],1],['Nếu x²=49 và x>0 thì x=?',['-7','7','14'],1],['Tỉ lệ thức 2/5 = x/20, x=?',['8','10','12'],0],['Chu vi hình vuông cạnh 5 cm?',['10 cm','20 cm','25 cm'],1],['(-3) × (-4) = ?', ['-12','7','12'],2],['Tổng ba góc trong tam giác?',['90°','180°','360°'],1],['Phân tích x²-9 thành nhân tử?',['(x-3)(x+3)','(x-9)(x+1)','x(x-9)'],0],['15% của 200 là?',['15','20','30'],2]];let qIndex=0;
-function toast(t){$('toast').textContent=t;$('toast').style.display='block';setTimeout(()=>$('toast').style.display='none',1500)}function soundUpdate(){$('sound').textContent=soundOn?'🔊 ÂM THANH: BẬT':'🔇 ÂM THANH: TẮT'}function playMusic(){if(!soundOn)return;$('loseMusic').pause();$('music').play().catch(()=>{})}function stopMusic(){$('music').pause()}
-function clearWorld(){for(let o of [...obstacles,...stars])scene.remove(o);obstacles=[];stars=[]}
-function startGame(){clearWorld();score=0;elapsed=0;speed=1;lane=0;jumpY=0;jumpV=0;ownerDistance=17;boost=0;spawnT=0;starT=2;quizT=5;nightT=0;isNight=false;lookingBack=false;quizOpen=false;horse.position.set(0,0,3);owner.position.set(0,0,20);$('menu').style.display='none';$('pause').style.display='none';$('end').style.display='none';$('quiz').style.display='none';$('hud').style.display='block';running=true;paused=false;ended=false;last=performance.now();playMusic();updateScore()}
-function home(){running=false;paused=false;ended=false;quizOpen=false;stopMusic();$('loseMusic').pause();$('hud').style.display='none';$('pause').style.display='none';$('end').style.display='none';$('quiz').style.display='none';$('menu').style.display='flex';$('bestMenu').textContent=best}
-function finish(){if(ended)return;running=false;ended=true;stopMusic();if(soundOn&&'@@LOSE@@'.length>5)$('loseMusic').play().catch(()=>{});best=Math.max(best,Math.floor(score));localStorage.setItem('runawayBest',best);$('finalscore').textContent=Math.floor(score);$('finalbest').textContent=best;$('bestMenu').textContent=best;$('end').style.display='flex'}function updateScore(){$('score').textContent=Math.floor(score);$('stars').textContent=Math.floor(window.starCount||0);$('best').textContent=best}
-function obstacle(type,l,z){let g=new THREE.Group();g.position.set(l*2.65,0,z);if(type==='barrel'){cyl(g,0,.55,0,.43,.43,.95,wood)}else if(type==='fence'){for(let x of [-.65,.65])box(g,x,.55,0,.15,1.1,.16,mane);box(g,0,.4,0,1.55,.16,.18,wood);box(g,0,.83,0,1.55,.16,.18,wood)}else box(g,0,.55,0,.95,1.05,.95,wood);g.userData={hit:false,passed:false,type};scene.add(g);return g}
-function makeStar(l,z){let g=new THREE.Group(),shape=new THREE.Shape();for(let i=0;i<10;i++){let a=Math.PI/2+i*Math.PI/5,r=i%2===0?.58:.27,x=Math.cos(a)*r,y=Math.sin(a)*r;i?shape.lineTo(x,y):shape.moveTo(x,y)}shape.closePath();let m=new THREE.Mesh(new THREE.ShapeGeometry(shape),new THREE.MeshStandardMaterial({color:0xffd21c,emissive:0xffa500,emissiveIntensity:1.3,side:THREE.DoubleSide}));g.add(m);g.position.set(l*2.65,1.4,z);scene.add(g);return g}
-function showQuiz(){if(quizOpen||!running||paused||ended)return;quizOpen=true;let q=questions[qIndex++%questions.length];$('question').textContent=q[0];$('answers').innerHTML='';q[1].forEach((a,i)=>{let b=document.createElement('button');b.className='answer';b.textContent=['A','B','C'][i]+'. '+a;b.onclick=()=>{if(!quizOpen)return;quizOpen=false;$('quiz').style.display='none';if(i===q[2]){score+=25;ownerDistance=Math.min(23,ownerDistance+2.5);toast('✅ Chính xác! Qua ải +25 m');}else{ownerDistance-=4;toast('❌ Sai rồi! Ông chủ tiến gần hơn!');if(ownerDistance<3.5)finish()}quizT=7+Math.random()*4;};$('answers').appendChild(b)});$('quiz').style.display='block'}
-function setLane(d){if(running&&!paused&&!ended&&!quizOpen)lane=Math.max(-1,Math.min(1,lane+d))}function jump(){if(running&&!paused&&!ended&&!quizOpen&&jumpY<=.01)jumpV=7.5}
-$('left').onpointerdown=e=>{e.preventDefault();setLane(-1)};$('right').onpointerdown=e=>{e.preventDefault();setLane(1)};$('jump').onpointerdown=e=>{e.preventDefault();jump()};$('turn').onclick=()=>{if(running&&!paused&&!ended){lookingBack=!lookingBack;$('turn').innerHTML=lookingBack?'↷<br>PHÍA TRƯỚC':'↶<br>QUAY ĐẦU'}};
-$('start').onclick=startGame;$('again').onclick=startGame;$('restart').onclick=startGame;$('home1').onclick=home;$('home2').onclick=home;$('sound').onclick=()=>{soundOn=!soundOn;soundUpdate();if(!soundOn){stopMusic();$('loseMusic').pause()}else if(running&&!paused)playMusic()};$('hamb').onclick=()=>{if(running&&!ended){paused=!paused;$('pause').style.display=paused?'flex':'none';paused?stopMusic():playMusic();last=performance.now()}};$('resume').onclick=()=>{paused=false;$('pause').style.display='none';last=performance.now();playMusic()};
-window.addEventListener('keydown',e=>{let k=e.key.toLowerCase();if(k==='arrowleft'||k==='a')setLane(-1);if(k==='arrowright'||k==='d')setLane(1);if(k==='arrowup'||k===' '){e.preventDefault();jump()}if(k==='r'&&running&&!paused){lookingBack=!lookingBack;$('turn').innerHTML=lookingBack?'↷<br>PHÍA TRƯỚC':'↶<br>QUAY ĐẦU'}if(k==='escape'&&running){paused=!paused;$('pause').style.display=paused?'flex':'none';paused?stopMusic():playMusic()}});
-function moveWorld(dt){let travel=speed*dt*12;for(let s of stripes){s.position.z+=travel;if(s.position.z>8)s.position.z-=190}for(let t of trees){t.position.z+=travel;if(t.position.z>10)t.position.z-=195}for(let c of clouds){c.position.x+=dt*.5;if(c.position.x>22)c.position.x=-22}
-for(let o of obstacles){o.position.z+=travel;let cz=Math.abs(o.position.z-horse.position.z)<1.4,cx=Math.abs(o.position.x-horse.position.x)<1.2;if(!o.userData.hit&&cz&&cx){o.userData.hit=true;if(jumpY<1.05){ownerDistance-=3;toast('💥 Va chạm! Ông chủ áp sát!')}}if(!o.userData.passed&&o.position.z>horse.position.z+1){o.userData.passed=true;score+=5}}
-obstacles=obstacles.filter(o=>{if(o.position.z>12){scene.remove(o);return false}return true});for(let s of stars){s.position.z+=travel;s.rotation.y+=dt*2.5;let cz=Math.abs(s.position.z-horse.position.z)<1.5,cx=Math.abs(s.position.x-horse.position.x)<1.2;if(!s.userData.got&&cz&&cx){s.userData.got=true;boost=5;ownerDistance=Math.min(24,ownerDistance+5);window.starCount=(window.starCount||0)+1;toast('⭐ TĂNG TỐC! Bỏ xa ông chủ!')}}stars=stars.filter(s=>{if(s.userData.got||s.position.z>12){scene.remove(s);return false}return true})}
-function animate(now){requestAnimationFrame(animate);let dt=Math.min((now-last)/1000,.05);last=now;if(running&&!paused&&!ended&&!quizOpen){elapsed+=dt;boost=Math.max(0,boost-dt);speed=Math.min(2.5,1+elapsed*.012)+(boost>0?1.1:0);score+=dt*speed*1.8;ownerDistance-=dt*(.24+Math.max(0,1.7-speed)*.18);if(ownerDistance<2.5){ownerDistance=2.5;finish()}spawnT+=dt;starT-=dt;quizT-=dt;if(spawnT>Math.max(.42,1.25-elapsed*.006)){spawnT=0;obstacles.push(obstacle(['barrel','fence','crate'][Math.floor(Math.random()*3)],Math.floor(Math.random()*3)-1,-90))}if(starT<=0){starT=4+Math.random()*3;stars.push(makeStar(Math.floor(Math.random()*3)-1,-90))}if(quizT<=0)showQuiz();moveWorld(dt);nightT+=dt;if(nightT>24){nightT=0;isNight=!isNight}let bg=new THREE.Color(isNight?0x111b39:0x6bd7f0);scene.background.lerp(bg,dt*.22);scene.fog.color.copy(scene.background);sun.intensity=THREE.MathUtils.lerp(sun.intensity,isNight?.35:2,dt*.2);horse.position.x=THREE.MathUtils.lerp(horse.position.x,lane*2.65,dt*8);if(jumpV!==0||jumpY>0){jumpY+=jumpV*dt;jumpV-=17*dt;if(jumpY<0){jumpY=0;jumpV=0}}horse.position.y=jumpY;horse.userData.legs.forEach((l,i)=>l.rotation.x=Math.sin(elapsed*speed*10+(i%2)*Math.PI)*.48);owner.position.z=horse.position.z+ownerDistance;owner.position.x=THREE.MathUtils.lerp(owner.position.x,horse.position.x,dt*.5);updateScore()}
-let dz=lookingBack?horse.position.z-6:horse.position.z+9.5;camera.position.x=THREE.MathUtils.lerp(camera.position.x,lookingBack?horse.position.x:horse.position.x*.35,dt*5);camera.position.y=THREE.MathUtils.lerp(camera.position.y,4.2,dt*5);camera.position.z=THREE.MathUtils.lerp(camera.position.z,dz,dt*5);camera.lookAt(lookingBack?owner.position.x:horse.position.x,1.2,lookingBack?owner.position.z-3:horse.position.z-12);renderer.render(scene,camera)}camera.position.set(0,4.2,12);camera.lookAt(0,1,0);requestAnimationFrame(animate);window.addEventListener('resize',()=>{camera.aspect=root.clientWidth/root.clientHeight;camera.updateProjectionMatrix();renderer.setSize(root.clientWidth,root.clientHeight)});$('bestMenu').textContent=best;$('best').textContent=best;soundUpdate();
-</script></body></html>'''
-html = html.replace('@@MUSIC@@', music).replace('@@LOSE@@', lose)
-components.html(html, height=850, scrolling=False)
+# Nhạc nền lấy từ file ngoc83.mp3 nằm cùng thư mục gốc trên GitHub.
+# File cần được tải lên repo game-dap-chuot với đúng tên ngoc83.mp3.
+music_url = "https://raw.githubusercontent.com/honghoasamsunglt2-tech/game-dap-chuot/main/ngoc83.mp3"
+game = game.replace("</body>", f'<audio id="bgMusic" src="{music_url}" loop preload="auto"></audio><script>\nconst bgMusic=document.getElementById("bgMusic");\nconst oldSoundHandler=document.getElementById("soundBtn");\noldSoundHandler.addEventListener("click",()=>{{if(window.soundOn!==false){{bgMusic.play().catch(()=>{{}})}}else{{bgMusic.pause()}}}});\ndocument.getElementById("startBtn").addEventListener("click",()=>{{bgMusic.play().catch(()=>{{}})}},{{once:false}});\ndocument.getElementById("retryBtn").addEventListener("click",()=>{{bgMusic.play().catch(()=>{{}})}});\ndocument.getElementById("backBtn").addEventListener("click",()=>bgMusic.pause());\ndocument.getElementById("homeBtn").addEventListener("click",()=>bgMusic.pause());\n</script></body>')
+components.html(game, height=780, scrolling=False)
