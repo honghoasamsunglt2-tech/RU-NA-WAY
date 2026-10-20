@@ -39,7 +39,7 @@ canvas{display:block}
 .pill{background:#07313de8;border:1px solid #ffffff66;border-radius:12px;padding:8px;font-size:12px;font-weight:bold}
 button{touch-action:manipulation;cursor:pointer}
 #hamb{pointer-events:auto;background:#07313d;color:white;border:1px solid #ffffff66;border-radius:12px;padding:8px 12px;font-size:22px}
-#question{position:absolute;top:62px;left:50%;transform:translateX(-50%);width:min(94%,520px);text-align:center;background:#082c36eF;border:2px solid #ffe16b;border-radius:15px;padding:10px;font-weight:bold;font-size:15px}
+#question{position:absolute;top:62px;left:50%;transform:translateX(-50%);width:min(94%,520px);text-align:center;background:#082c36ef;border:2px solid #ffe16b;border-radius:15px;padding:10px;font-weight:bold;font-size:15px}
 .controls{position:absolute;bottom:15px;left:10px;right:10px;display:flex;justify-content:space-between;align-items:end;gap:5px}
 .group{display:flex;gap:7px}
 .ctrl{pointer-events:auto;width:58px;height:60px;border-radius:17px;border:2px solid #ffffff66;background:#073849ed;color:white;font-size:25px;font-weight:bold}
@@ -77,7 +77,6 @@ h1{font-size:clamp(35px,8vw,58px);margin:0;text-shadow:3px 4px #9a431b}
    <button class="ctrl" id="jump">↑<br>NHẢY</button>
   </div>
  </div>
-
  <div id="menu" class="overlay">
   <div class="panel">
    <h1>🐎 RUNAWAY</h1>
@@ -89,7 +88,6 @@ h1{font-size:clamp(35px,8vw,58px);margin:0;text-shadow:3px 4px #9a431b}
    <div class="note">← → đổi làn · Space nhảy · R quay đầu<br>Chọn cổng có đáp án đúng để thoát ông chủ!</div>
   </div>
  </div>
-
  <div id="pause" class="overlay">
   <div class="panel"><h2>⏸ TẠM DỪNG</h2>
    <button class="action" id="resume">▶ TIẾP TỤC</button>
@@ -107,19 +105,15 @@ h1{font-size:clamp(35px,8vw,58px);margin:0;text-shadow:3px 4px #9a431b}
 </div>
 <audio id="music" loop src="data:audio/mpeg;base64,@@MUSIC@@"></audio>
 <audio id="loseMusic" src="data:audio/mpeg;base64,@@LOSE@@"></audio>
-<script>
-window.__FACE_DATA__ = "@@FACE@@";
-</script>
+<script>window.__FACE_DATA__ = "@@FACE@@";</script>
 <script type="module">
 const $=id=>document.getElementById(id);
 let THREE;
-try{
- THREE=await import('https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js');
-}catch(e){
+try{THREE=await import('https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js')}
+catch(e){
  try{THREE=await import('https://unpkg.com/three@0.160.0/build/three.module.js')}
  catch(err){$('menu').innerHTML='<div class="panel"><h2>Không tải được 3D</h2><p>Kiểm tra mạng rồi tải lại trang.</p></div>';throw err}
 }
-
 const root=$('game'),scene=new THREE.Scene();
 scene.background=new THREE.Color(0x70dcf5);
 scene.fog=new THREE.Fog(0x70dcf5,35,150);
@@ -127,47 +121,40 @@ const camera=new THREE.PerspectiveCamera(65,root.clientWidth/root.clientHeight,.
 const renderer=new THREE.WebGLRenderer({antialias:true});
 renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));
 renderer.setSize(root.clientWidth,root.clientHeight);
-renderer.shadowMap.enabled=true;
-root.prepend(renderer.domElement);
-
+renderer.shadowMap.enabled=true;root.prepend(renderer.domElement);
 scene.add(new THREE.HemisphereLight(0xd8f8ff,0x35532a,2.1));
 const sun=new THREE.DirectionalLight(0xfff1d1,2.1);
 sun.position.set(-8,18,7);sun.castShadow=true;scene.add(sun);
-
 const mat=c=>new THREE.MeshStandardMaterial({color:c,roughness:.85});
 const grass=mat(0x258c3e),roadmat=mat(0x505b64),lineMat=mat(0xfff3c5);
 const trunk=mat(0x704222),leaf=mat(0x17833b),leaf2=mat(0x27a849);
 const horseBrown=mat(0xa95827),mane=mat(0x39241b),dark=mat(0x44271b);
 const ownerClothes=mat(0x4d2420);
-
 function box(p,x,y,z,a,b,c,m){
  const o=new THREE.Mesh(new THREE.BoxGeometry(a,b,c),m);
  o.position.set(x,y,z);o.castShadow=true;o.receiveShadow=true;p.add(o);return o;
 }
 function ball(p,x,y,z,a,b,c,m){
- const o=new THREE.Mesh(new THREE.SphereGeometry(1,14,12),m);
+ const o=new THREE.Mesh(new THREE.SphereGeometry(1,18,14),m);
  o.position.set(x,y,z);o.scale.set(a,b,c);o.castShadow=true;p.add(o);return o;
 }
 function cyl(p,x,y,z,a,b,h,m){
  const o=new THREE.Mesh(new THREE.CylinderGeometry(a,b,h,12),m);
  o.position.set(x,y,z);o.castShadow=true;p.add(o);return o;
 }
-
 // Đường 3D
 box(scene,0,-.32,-48,200,.3,220,grass);
 box(scene,0,-.12,-55,10,.12,220,roadmat);
 for(const x of [-5.05,5.05])box(scene,x,.02,-55,.09,.04,220,lineMat);
 const stripes=[];
 for(let z=5;z>-180;z-=5)stripes.push(box(scene,0,.01,z,.12,.025,2.1,lineMat));
-
 const trees=[];
 function tree(x,z){
  const g=new THREE.Group();g.position.set(x,0,z);scene.add(g);
  cyl(g,0,.7,0,.18,.25,1.4,trunk);
  ball(g,0,1.85,0,.78,.86,.76,leaf);
  ball(g,-.32,2.05,0,.5,.56,.5,leaf2);
- ball(g,.35,2.22,-.12,.49,.52,.5,leaf);
- return g;
+ ball(g,.35,2.22,-.12,.49,.52,.5,leaf);return g;
 }
 for(let z=8;z>-190;z-=5){
  trees.push(tree(-7.5-Math.random()*1.5,z));
@@ -176,15 +163,13 @@ for(let z=8;z>-190;z-=5){
 }
 const clouds=[];
 function cloud(x,y,z){
- const g=new THREE.Group();g.position.set(x,y,z);scene.add(g);
- const cm=mat(0xffffff);
- ball(g,0,0,0,1.3,.42,.6,cm);
- ball(g,-.7,.12,0,.7,.5,.55,cm);
+ const g=new THREE.Group();g.position.set(x,y,z);scene.add(g);const cm=mat(0xffffff);
+ ball(g,0,0,0,1.3,.42,.6,cm);ball(g,-.7,.12,0,.7,.5,.55,cm);
  ball(g,.6,.18,0,.75,.55,.58,cm);return g;
 }
 for(let i=0;i<8;i++)clouds.push(cloud(-17+Math.random()*34,10+Math.random()*5,-20-Math.random()*100));
 
-// Ngựa 3D
+// Ngựa 3D — đã thêm tròng mắt đen và chấm sáng
 function makeHorse(){
  const g=new THREE.Group();scene.add(g);
  ball(g,0,1.45,.2,.62,.7,.95,horseBrown);
@@ -192,24 +177,30 @@ function makeHorse(){
  ball(g,0,2.55,-.72,.39,.43,.43,horseBrown);
  ball(g,0,2.4,-1.03,.31,.22,.38,horseBrown);
  ball(g,0,2.34,-1.32,.25,.16,.18,dark);
- for(const x of [-.24,.24]){
-  ball(g,x,2.99,-.7,.105,.29,.12,mane);
-  ball(g,x*1.65,2.62,-1.02,.075,.085,.045,mat(0xffffff));
+ for(const x of [-.24,.24])ball(g,x,2.99,-.7,.105,.29,.12,mane);
+ // Mắt nằm hai bên mặt, hướng ra phía trước (-Z)
+ const whiteEye=mat(0xffffff);
+ const pupilMat=new THREE.MeshStandardMaterial({color:0x101010,roughness:.35});
+ const glintMat=new THREE.MeshBasicMaterial({color:0xffffff});
+ for(const side of [-1,1]){
+  ball(g,side*.285,2.63,-1.025,.145,.155,.095,whiteEye);
+  ball(g,side*.285,2.635,-1.108,.078,.098,.045,pupilMat);
+  ball(g,side*.265,2.675,-1.145,.027,.03,.018,glintMat);
  }
  ball(g,0,2.72,-.45,.29,.24,.2,mane);
  ball(g,0,2.27,-.35,.2,.42,.2,mane);
  ball(g,0,1.94,.5,.18,.18,.58,mane);
  const legs=[];
  for(const x of [-.39,.39])for(const z of [-.35,.75]){
-  const l=new THREE.Group();l.position.set(x,1,z);g.add(l);
-  cyl(l,0,-.43,0,.105,.13,.86,horseBrown);
+  const l=new THREE.Group();l.position.set(x,1,z);
+  g.add(l);cyl(l,0,-.43,0,.105,.13,.86,horseBrown);
   box(l,0,-.86,-.04,.22,.16,.3,mane);legs.push(l);
  }
  g.userData.legs=legs;g.position.set(0,0,3);return g;
 }
 const horse=makeHorse();
 
-// Ông chủ 3D, có thể gắn ảnh khuôn mặt
+// Ông chủ 3D
 function makeOwner(){
  const g=new THREE.Group();scene.add(g);
  box(g,0,1.18,0,.8,.95,.4,ownerClothes);
@@ -220,7 +211,6 @@ function makeOwner(){
   cyl(g,x,.45,0,.1,.12,.85,mat(0x292020));
   cyl(g,x*1.4,1.45,-.1,.08,.09,.7,mat(0xd6a16e));
  }
- // Mặt ảnh được dán lên mặt trước đầu
  const faceData=window.__FACE_DATA__;
  if(faceData){
   const img=new Image();
@@ -232,14 +222,12 @@ function makeOwner(){
   };
   img.src='data:image/jpeg;base64,'+faceData;
  }
- // Xô
  cyl(g,.48,.75,-.35,.34,.27,.52,mat(0x85502b));
  cyl(g,.48,1.02,-.35,.31,.31,.06,mat(0x50301d));
  g.rotation.y=Math.PI;return g;
 }
 const owner=makeOwner();
 
-// Sao tăng tốc
 function makeStar(lane,z){
  const sh=new THREE.Shape();
  for(let i=0;i<10;i++){
@@ -247,15 +235,12 @@ function makeStar(lane,z){
   const x=Math.cos(a)*r,y=Math.sin(a)*r;
   if(i===0)sh.moveTo(x,y);else sh.lineTo(x,y);
  }
- sh.closePath();
- const g=new THREE.Group();
+ sh.closePath();const g=new THREE.Group();
  g.add(new THREE.Mesh(new THREE.ShapeGeometry(sh),
   new THREE.MeshStandardMaterial({color:0xffd21c,emissive:0xffa500,emissiveIntensity:1.1,side:THREE.DoubleSide})));
  g.add(new THREE.PointLight(0xffc928,1.5,4));
  g.position.set(lane*2.65,1.4,z);scene.add(g);return g;
 }
-
-// Câu hỏi toán lớp 6-8
 function makeQuestions(){
  const q=[];
  function add(text,ans,wrong){
@@ -280,7 +265,6 @@ function makeQuestions(){
  }
  return q.sort(()=>Math.random()-.5);
 }
-
 let obstacles=[],stars=[],gates=[],questions=[];
 let running=false,paused=false,ended=false,soundOn=true,lookingBack=false;
 let lane=0,jumpY=0,jumpV=0,speed=1,elapsed=0,score=0,starCount=0;
@@ -289,23 +273,14 @@ let qIndex=0,activeGate=null,gateResolved=false,dayTimer=0,isNight=false;
 let last=performance.now(),toastTimer=null;
 let best=Number(localStorage.getItem('runawayBest')||0);
 $('best').textContent=best;$('menuBest').textContent=best;
-
 function toast(t){
  $('toast').textContent=t;$('toast').style.display='block';
  if(toastTimer)clearTimeout(toastTimer);
  toastTimer=setTimeout(()=>$('toast').style.display='none',1500);
 }
-function disposeList(arr){
- for(const o of arr)scene.remove(o);
- arr.length=0;
-}
-function playMusic(){
- if(!soundOn)return;
- $('loseMusic').pause();$('loseMusic').currentTime=0;
- $('music').play().catch(()=>{});
-}
+function disposeList(arr){for(const o of arr)scene.remove(o);arr.length=0}
+function playMusic(){if(!soundOn)return;$('loseMusic').pause();$('loseMusic').currentTime=0;$('music').play().catch(()=>{})}
 function stopMusic(){$('music').pause()}
-
 function resetGame(){
  disposeList(obstacles);disposeList(stars);disposeList(gates);
  questions=makeQuestions();qIndex=0;activeGate=null;gateResolved=false;
@@ -326,66 +301,70 @@ function home(){
  $('menu').style.display='flex';$('menuBest').textContent=best;
 }
 function finish(){
- if(ended)return;
- ended=true;running=false;stopMusic();
- if(soundOn&&$('loseMusic').src.length>35){
-  $('loseMusic').currentTime=0;$('loseMusic').play().catch(()=>{});
- }
- best=Math.max(best,Math.floor(score));
- localStorage.setItem('runawayBest',String(best));
+ if(ended)return;ended=true;running=false;stopMusic();
+ if(soundOn&&$('loseMusic').src.length>35){$('loseMusic').currentTime=0;$('loseMusic').play().catch(()=>{})}
+ best=Math.max(best,Math.floor(score));localStorage.setItem('runawayBest',String(best));
  $('result').innerHTML=`Quãng đường: <b>${Math.floor(score)} m</b><br>⭐ Sao đã nhặt: <b>${starCount}</b><br>🏆 Kỷ lục: <b>${best} m</b>`;
- $('best').textContent=best;$('menuBest').textContent=best;
- $('end').style.display='flex';
+ $('best').textContent=best;$('menuBest').textContent=best;$('end').style.display='flex';
 }
-
 function createObstacle(){
  const laneN=Math.floor(Math.random()*3)-1;
  const g=new THREE.Group();g.position.set(laneN*2.65,0,-85);scene.add(g);
- if(Math.random()<.5){
-  cyl(g,0,.55,0,.43,.43,.95,mat(0x85502b));
- }else{
-  box(g,0,.55,0,.95,1.05,.95,mat(0x85502b));
- }
+ if(Math.random()<.5)cyl(g,0,.55,0,.43,.43,.95,mat(0x85502b));
+ else box(g,0,.55,0,.95,1.05,.95,mat(0x85502b));
  obstacles.push(g);
 }
+
+// Ba cổng: đáp án nằm TRƯỚC mặt bảng và làn đúng khớp với đáp án đúng
 function createGate(){
  if(activeGate)return;
  const q=questions[qIndex%questions.length];qIndex++;
  const g=new THREE.Group();g.position.set(0,0,-90);scene.add(g);
- const correctLane=Math.floor(Math.random()*3)-1;
- const order=[...q.opts];const correctIndex=order.indexOf(q.ans);
+ const order=[...q.opts];
+ const correctIndex=order.findIndex(v=>String(v)===String(q.ans));
  const lanes=[-1,0,1];
+ const colors=['#168c66','#2477c9','#8750bd'];
  lanes.forEach((ln,i)=>{
-  const frame=box(g,ln*2.65,1.25,0,2.15,2.5,.22,mat(i===correctLane+1?0x1d8b62:0x3a6d9c));
-  const canvas=document.createElement('canvas');canvas.width=256;canvas.height=128;
+  const x=ln*2.65;
+  // Khung vàng lớn và bảng màu
+  box(g,x-1.13,1.43,0,.14,2.9,.32,mat(0xffd65a));
+  box(g,x+1.13,1.43,0,.14,2.9,.32,mat(0xffd65a));
+  box(g,x,2.87,0,2.4,.16,.34,mat(0xffd65a));
+  box(g,x,1.43,0,2.12,2.72,.25,mat([0x168c66,0x2477c9,0x8750bd][i]));
+  // Tạo chữ lớn, tự thu nhỏ nếu đáp án dài
+  const canvas=document.createElement('canvas');canvas.width=512;canvas.height=512;
   const ctx=canvas.getContext('2d');
-  ctx.fillStyle=['#1c8e72','#326fc0','#9b5cbd'][i];
-  ctx.fillRect(0,0,256,128);
-  ctx.fillStyle='white';ctx.font='bold 48px Arial';ctx.textAlign='center';
-  ctx.fillText(order[i],128,78);
-  const tex=new THREE.CanvasTexture(canvas);
-  const sign=new THREE.Mesh(new THREE.PlaneGeometry(1.8,.9),new THREE.MeshBasicMaterial({map:tex,side:THREE.DoubleSide}));
-  sign.position.set(ln*2.65,1.3,-.14);g.add(sign);
-  box(g,ln*2.65,.12,0,2.25,.22,.3,mat(0x60452d));
+  ctx.clearRect(0,0,512,512);
+  ctx.fillStyle='#ffffff';ctx.textAlign='center';ctx.textBaseline='middle';
+  let fs=180;ctx.font=`900 ${fs}px Arial`;
+  while(ctx.measureText(String(order[i])).width>470&&fs>48){fs-=8;ctx.font=`900 ${fs}px Arial`;}
+  ctx.shadowColor='#10243b';ctx.shadowBlur=12;
+  ctx.lineWidth=5;ctx.strokeStyle='#15344b';
+  ctx.strokeText(String(order[i]),256,256,470);
+  ctx.fillText(String(order[i]),256,256,470);
+  const tex=new THREE.CanvasTexture(canvas);tex.colorSpace=THREE.SRGBColorSpace;
+  const sign=new THREE.Mesh(new THREE.PlaneGeometry(1.95,2.25),
+    new THREE.MeshBasicMaterial({map:tex,transparent:true,side:THREE.DoubleSide,depthTest:false}));
+  // Camera tiến từ phía +Z nên mặt chữ đặt ở +Z, trước bảng
+  sign.position.set(x,1.43,.145);sign.renderOrder=10;g.add(sign);
+  box(g,x,.12,0,2.32,.24,.5,mat(0x60452d));
  });
- g.userData.q=q;g.userData.correctLane=lanes[correctIndex];g.userData.done=false;
+ g.userData.q=q;
+ g.userData.correctLane=lanes[correctIndex];
+ g.userData.done=false;
  gates.push(g);activeGate=g;gateResolved=false;
  $('question').textContent='🧠 '+q.text+' — chọn cổng đáp án!';
 }
 function answerGate(g){
- if(g.userData.done)return;
- g.userData.done=true;
+ if(g.userData.done)return;g.userData.done=true;
  if(lane===g.userData.correctLane){
-  score+=30;ownerDistance=Math.min(25,ownerDistance+4);
-  toast('✅ Chính xác! Qua ải toán!');
+  score+=30;ownerDistance=Math.min(25,ownerDistance+4);toast('✅ Chính xác! Qua ải toán!');
  }else{
-  ownerDistance=Math.max(2.5,ownerDistance-5);
-  toast('❌ Sai rồi! Ông chủ tiến gần hơn!');
+  ownerDistance=Math.max(2.5,ownerDistance-5);toast('❌ Sai rồi! Ông chủ tiến gần hơn!');
  }
  $('question').textContent='Đang chạy đến ải tiếp theo…';
  if(activeGate===g)activeGate=null;
 }
-
 function setLane(d){if(running&&!paused&&!ended)lane=Math.max(-1,Math.min(1,lane+d))}
 function jump(){if(running&&!paused&&!ended&&jumpY<=.01)jumpV=7.5}
 $('left').onpointerdown=e=>{e.preventDefault();setLane(-1)};
@@ -397,8 +376,7 @@ $('home1').onclick=home;$('home2').onclick=home;
 $('hamb').onclick=()=>{if(running&&!paused&&!ended){paused=true;$('pause').style.display='flex';stopMusic()}};
 $('resume').onclick=()=>{if(running&&paused&&!ended){paused=false;$('pause').style.display='none';last=performance.now();playMusic()}};
 $('sound').onclick=()=>{
- soundOn=!soundOn;
- $('sound').textContent=soundOn?'🔊 ÂM THANH: BẬT':'🔇 ÂM THANH: TẮT';
+ soundOn=!soundOn;$('sound').textContent=soundOn?'🔊 ÂM THANH: BẬT':'🔇 ÂM THANH: TẮT';
  if(!soundOn){stopMusic();$('loseMusic').pause()}else if(running&&!paused&&!ended)playMusic();
 };
 window.addEventListener('keydown',e=>{
@@ -408,53 +386,36 @@ window.addEventListener('keydown',e=>{
  if(e.key.toLowerCase()==='r'&&running&&!paused&&!ended)lookingBack=!lookingBack;
  if(e.key==='Escape'&&running&&!paused&&!ended){paused=true;$('pause').style.display='flex';stopMusic()}
 });
-
 function lighting(dt){
- dayTimer+=dt;
- if(dayTimer>35){dayTimer=0;isNight=!isNight}
+ dayTimer+=dt;if(dayTimer>35){dayTimer=0;isNight=!isNight}
  const target=new THREE.Color(isNight?0x101b3d:0x70dcf5);
  scene.background.lerp(target,dt*.35);scene.fog.color.copy(scene.background);
  grass.color.lerp(new THREE.Color(isNight?0x102a28:0x258c3e),dt*.35);
  roadmat.color.lerp(new THREE.Color(isNight?0x252b3b:0x505b64),dt*.35);
  sun.intensity=THREE.MathUtils.lerp(sun.intensity,isNight?.35:2.1,dt*.3);
 }
-
 function animate(now){
  requestAnimationFrame(animate);
  const dt=Math.min((now-last)/1000,.05);last=now;
  if(running&&!paused&&!ended){
   elapsed+=dt;boost=Math.max(0,boost-dt);
-  const base=Math.min(2.6,1+elapsed*.012);
-  speed=Math.min(3.8,base+(boost>0?1.1:0));
-  score+=dt*speed*2;
-  ownerDistance-=dt*(speed<1.45?.6:.13);
-  owner.position.z=horse.position.z+ownerDistance;
-  if(ownerDistance<2.8){finish()}
-
+  const base=Math.min(2.6,1+elapsed*.012);speed=Math.min(3.8,base+(boost>0?1.1:0));
+  score+=dt*speed*2;ownerDistance-=dt*(speed<1.45?.6:.13);
+  owner.position.z=horse.position.z+ownerDistance;if(ownerDistance<2.8)finish();
   const travel=speed*dt*12;
   for(const s of stripes){s.position.z+=travel;if(s.position.z>8)s.position.z-=190}
   for(const t of trees){t.position.z+=travel;if(t.position.z>10)t.position.z-=195}
   for(const c of clouds){c.position.x+=dt*.5;if(c.position.x>22)c.position.x=-22}
-
-  spawnTimer+=dt;
-  if(spawnTimer>1.1){spawnTimer=0;createObstacle()}
-  starTimer-=dt;
-  if(starTimer<=0){
-   stars.push(makeStar(Math.floor(Math.random()*3)-1,-85));
-   starTimer=4+Math.random()*3;
-  }
-  gateTimer-=dt;
-  if(gateTimer<=0&&!activeGate){createGate();gateTimer=7+Math.random()*2}
-
+  spawnTimer+=dt;if(spawnTimer>1.1){spawnTimer=0;createObstacle()}
+  starTimer-=dt;if(starTimer<=0){stars.push(makeStar(Math.floor(Math.random()*3)-1,-85));starTimer=4+Math.random()*3}
+  gateTimer-=dt;if(gateTimer<=0&&!activeGate){createGate();gateTimer=7+Math.random()*2}
   for(const o of obstacles){
    o.position.z+=travel;
    if(Math.abs(o.position.z-horse.position.z)<1.1&&Math.abs(o.position.x-horse.position.x)<1.15&&jumpY<1){
-    ownerDistance=Math.max(2.5,ownerDistance-2.5);o.position.z=20;
-    toast('💥 Va chạm! Ông chủ áp sát!');
+    ownerDistance=Math.max(2.5,ownerDistance-2.5);o.position.z=20;toast('💥 Va chạm! Ông chủ áp sát!');
    }
   }
   obstacles=obstacles.filter(o=>{if(o.position.z>12){scene.remove(o);return false}return true});
-
   for(const s of stars){
    s.position.z+=travel;s.rotation.y+=dt*3;s.rotation.z+=dt*2;
    if(Math.abs(s.position.z-horse.position.z)<1.5&&Math.abs(s.position.x-horse.position.x)<1.3){
@@ -463,21 +424,16 @@ function animate(now){
    }
   }
   stars=stars.filter(s=>{if(s.userData.hit||s.position.z>12){scene.remove(s);return false}return true});
-
   for(const g of gates){
    g.position.z+=travel;
-   if(!g.userData.done&&Math.abs(g.position.z-horse.position.z)<1.2){
-    answerGate(g);
-   }
+   if(!g.userData.done&&Math.abs(g.position.z-horse.position.z)<1.2)answerGate(g);
   }
   gates=gates.filter(g=>{if(g.position.z>12){scene.remove(g);return false}return true});
-
   horse.position.x=THREE.MathUtils.lerp(horse.position.x,lane*2.65,dt*8);
   if(jumpV!==0||jumpY>0){jumpY+=jumpV*dt;jumpV-=17*dt;if(jumpY<0){jumpY=0;jumpV=0}}
   horse.position.y=jumpY;
   horse.userData.legs.forEach((l,i)=>l.rotation.x=Math.sin(elapsed*speed*10+(i%2)*Math.PI)*.48);
-  lighting(dt);
-  $('score').textContent=Math.floor(score);
+  lighting(dt);$('score').textContent=Math.floor(score);
  }
  const desiredZ=lookingBack?horse.position.z-6:horse.position.z+9.5;
  camera.position.x=THREE.MathUtils.lerp(camera.position.x,lookingBack?horse.position.x:horse.position.x*.35,Math.min(1,dt*5));
@@ -486,11 +442,10 @@ function animate(now){
  camera.lookAt(lookingBack?owner.position.x:horse.position.x,1.3,lookingBack?owner.position.z-3:horse.position.z-12);
  renderer.render(scene,camera);
 }
-camera.position.set(0,4.2,12);camera.lookAt(0,1,0);
-requestAnimationFrame(animate);
+camera.position.set(0,4.2,12);camera.lookAt(0,1,0);requestAnimationFrame(animate);
 window.addEventListener('resize',()=>{
- camera.aspect=root.clientWidth/root.clientHeight;
- camera.updateProjectionMatrix();renderer.setSize(root.clientWidth,root.clientHeight);
+ camera.aspect=root.clientWidth/root.clientHeight;camera.updateProjectionMatrix();
+ renderer.setSize(root.clientWidth,root.clientHeight);
 });
 document.addEventListener('visibilitychange',()=>{
  if(document.hidden&&running&&!paused&&!ended){paused=true;$('pause').style.display='flex';stopMusic()}
@@ -499,9 +454,7 @@ document.addEventListener('visibilitychange',()=>{
 </body>
 </html>
 """
-
 html = html.replace("@@MUSIC@@", music)
 html = html.replace("@@LOSE@@", lose_music)
 html = html.replace("@@FACE@@", face)
-
 components.html(html, height=850, scrolling=False)
