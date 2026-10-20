@@ -215,10 +215,23 @@ function makeOwner(){
  if(faceData){
   const img=new Image();
   img.onload=()=>{
-   const tex=new THREE.Texture(img);tex.colorSpace=THREE.SRGBColorSpace;tex.needsUpdate=true;
-   const fm=new THREE.MeshBasicMaterial({map:tex,transparent:true,side:THREE.DoubleSide});
-   const panel=new THREE.Mesh(new THREE.PlaneGeometry(.52,.52),fm);
-   panel.position.set(0,2.56,-.315);g.add(panel);
+   const tex=new THREE.Texture(img);
+   tex.colorSpace=THREE.SRGBColorSpace;
+   tex.needsUpdate=true;
+   tex.minFilter=THREE.LinearFilter;
+   tex.magFilter=THREE.LinearFilter;
+   // Ảnh chu môi áp sát mặt trước đầu ông chủ, không bị lơ lửng.
+   const fm=new THREE.MeshBasicMaterial({
+    map:tex,
+    transparent:true,
+    side:THREE.DoubleSide,
+    depthWrite:false,
+    toneMapped:false
+   });
+   const panel=new THREE.Mesh(new THREE.PlaneGeometry(.57,.57),fm);
+   panel.position.set(0,2.56,-.337);
+   panel.renderOrder=5;
+   g.add(panel);
   };
   img.src='data:image/jpeg;base64,'+faceData;
  }
