@@ -42,6 +42,8 @@ canvas{display:block}
 button{touch-action:manipulation;cursor:pointer}
 #hamb,#settingsBtn{pointer-events:auto;background:#07313d;color:white;border:1px solid #ffffff66;border-radius:12px;padding:8px 12px;font-size:22px}
 #settingsBtn{position:absolute;top:12px;right:12px;z-index:5;background:#07313de8}
+.menuSettings{position:absolute;top:12px;right:12px}
+#menu .panel{position:relative;padding-top:52px}
 #rules{display:none;z-index:8}
 .rulesText{text-align:left;font-size:14px;line-height:1.65;max-height:55vh;overflow:auto}
 #closeRules{margin-top:10px}
@@ -65,7 +67,6 @@ h1{font-size:clamp(35px,8vw,58px);margin:0;text-shadow:3px 4px #9a431b}
 </head>
 <body>
 <div id="game">
- <button id="settingsBtn" aria-label="Thể lệ">⚙️</button>
  <div id="hud">
   <div class="top">
    <div class="pill">🏁 <span id="score">0</span> m</div>
@@ -85,6 +86,7 @@ h1{font-size:clamp(35px,8vw,58px);margin:0;text-shadow:3px 4px #9a431b}
   </div>
  </div>
  <div id="menu" class="overlay">
+  <button id="settingsBtn" class="menuSettings" aria-label="Thể lệ">⚙️</button>
   <div class="panel">
    <h1>🐎 RUNAWAY</h1>
    <div class="sub">3D MATH ESCAPE</div>
@@ -410,8 +412,8 @@ $('turn').onclick=()=>{if(running&&!paused&&!ended){lookingBack=!lookingBack;$('
 $('start').onclick=resetGame;$('restart').onclick=resetGame;$('again').onclick=resetGame;
 $('home1').onclick=home;$('home2').onclick=home;
 $('hamb').onclick=()=>{if(running&&!paused&&!ended){paused=true;$('pause').style.display='flex';stopMusic()}};
-$('settingsBtn').onclick=()=>{if(running&&!paused&&!ended){paused=true;stopMusic()}$('rules').style.display='flex'};
-$('closeRules').onclick=()=>{ $('rules').style.display='none'; if(running&&!ended){paused=false;last=performance.now();playMusic()} };
+$('settingsBtn').onclick=()=>{$('rules').style.display='flex'};
+$('closeRules').onclick=()=>{$('rules').style.display='none'};
 $('home1').onclick=home;$('home2').onclick=home;
 $('resume').onclick=()=>{if(running&&paused&&!ended){paused=false;$('pause').style.display='none';last=performance.now();playMusic()}};
 $('sound').onclick=()=>{
@@ -438,7 +440,7 @@ function animate(now){
  const dt=Math.min((now-last)/1000,.05);last=now;
  if(running&&!paused&&!ended){
   elapsed+=dt;boost=Math.max(0,boost-dt);
-  const base=Math.min(2.6,1+elapsed*.012);speed=Math.min(3.8,base+(boost>0?1.1:0));
+  const base=Math.min(5.2,1+elapsed*.028);speed=Math.min(6.1,base+(boost>0?1.1:0));
   score+=dt*speed*2;ownerDistance-=dt*(speed<1.45?.22:.07);
   owner.position.z=horse.position.z+ownerDistance;if(ownerDistance<2.8)finish();
   const travel=speed*dt*12;
