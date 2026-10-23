@@ -305,7 +305,7 @@ function makeQuestions(){
 let obstacles=[],stars=[],gates=[],questions=[];
 let running=false,paused=false,ended=false,soundOn=true,lookingBack=false;
 let lane=0,jumpY=0,jumpV=0,speed=1,elapsed=0,score=0,starCount=0;
-let ownerDistance=20,boost=0,spawnTimer=0,starTimer=3,gateTimer=2;
+let ownerDistance=16,boost=0,spawnTimer=0,starTimer=3,gateTimer=2;
 let qIndex=0,activeGate=null,gateResolved=false,dayTimer=0,isNight=false;
 let last=performance.now(),toastTimer=null;
 let best=Number(localStorage.getItem('runawayBest')||0);
@@ -323,7 +323,7 @@ function resetGame(){
  disposeList(obstacles);disposeList(stars);disposeList(gates);
  questions=makeQuestions();qIndex=0;activeGate=null;gateResolved=false;
  lane=0;jumpY=0;jumpV=0;speed=1;elapsed=0;score=0;starCount=0;
- ownerDistance=20;boost=0;spawnTimer=0;starTimer=3;gateTimer=2;
+ ownerDistance=16;boost=0;spawnTimer=0;starTimer=3;gateTimer=2;
  dayTimer=0;isNight=false;lookingBack=false;
  horse.position.set(0,0,3);owner.position.set(0,0,17);
  $('score').textContent='0';$('stars').textContent='0';
@@ -398,7 +398,7 @@ function answerGate(g){
  if(lane===g.userData.correctLane){
   score+=30;ownerDistance=Math.min(25,ownerDistance+3.5);playAnswerSound('correctAnswerSound');toast('✅ Chính xác! Qua ải toán!');
  }else{
-  if(Math.random()<0.70){ownerDistance=Math.max(7.5,ownerDistance-5.0);toast('❌ Sai rồi! Ông chủ tăng tốc áp sát!')}else{ownerDistance=Math.max(9.5,ownerDistance-2.8);toast('❌ Sai rồi! Ông chủ tiến gần hơn!')}playAnswerSound('wrongAnswerSound');
+  if(Math.random()<0.70){ownerDistance=Math.max(3.0,ownerDistance-6.5);toast('❌ Sai rồi! Ông chủ lao tới!')}else{ownerDistance=Math.max(4.0,ownerDistance-4.5);toast('❌ Sai rồi! Ông chủ áp sát!')}playAnswerSound('wrongAnswerSound');
  }
  $('question').textContent='Đang chạy đến ải tiếp theo…';
  if(activeGate===g)activeGate=null;
@@ -440,8 +440,10 @@ function animate(now){
  const dt=Math.min((now-last)/1000,.05);last=now;
  if(running&&!paused&&!ended){
   elapsed+=dt;boost=Math.max(0,boost-dt);
-  const base=Math.min(5.2,1+elapsed*.028);speed=Math.min(6.1,base+(boost>0?1.1:0));
-  score+=dt*speed*2;ownerDistance-=dt*(speed<1.45?.22:.07);
+  const base=Math.min(5.8,1+elapsed*.045);speed=Math.min(6.7,base+(boost>0?1.1:0));
+  score+=dt*speed*2;
+  // Ông chủ áp sát nhanh dần theo thời gian để ván chơi gọn hơn.
+  ownerDistance-=dt*(.12+Math.min(.22,elapsed*.003)+speed*.025);
   owner.position.z=horse.position.z+ownerDistance;if(ownerDistance<2.8)finish();
   const travel=speed*dt*12;
   for(const s of stripes){s.position.z+=travel;if(s.position.z>8)s.position.z-=190}
@@ -453,7 +455,7 @@ function animate(now){
   for(const o of obstacles){
    o.position.z+=travel;
    if(Math.abs(o.position.z-horse.position.z)<1.1&&Math.abs(o.position.x-horse.position.x)<1.15&&jumpY<1){
-    ownerDistance=Math.max(6.0,ownerDistance-2.5);o.position.z=20;toast('💥 Va chạm! Ông chủ áp sát!');
+    ownerDistance=Math.max(3.0,ownerDistance-4.0);o.position.z=20;toast('💥 Va chạm! Ông chủ áp sát!');
    }
   }
   obstacles=obstacles.filter(o=>{if(o.position.z>12){scene.remove(o);return false}return true});
