@@ -13,6 +13,8 @@ def b64file(name):
 
 music = b64file("An83.mp3")
 lose_music = b64file("thua.mp3")
+wrong_answer_sound = b64file("sai.mp3")
+correct_answer_sound = b64file("dung.mp3")
 face = b64file("owner_face.jpg")
 
 st.markdown("""
@@ -105,6 +107,8 @@ h1{font-size:clamp(35px,8vw,58px);margin:0;text-shadow:3px 4px #9a431b}
 </div>
 <audio id="music" loop src="data:audio/mpeg;base64,@@MUSIC@@"></audio>
 <audio id="loseMusic" src="data:audio/mpeg;base64,@@LOSE@@"></audio>
+<audio id="wrongAnswerSound" src="data:audio/mpeg;base64,@@WRONG@@"></audio>
+<audio id="correctAnswerSound" src="data:audio/mpeg;base64,@@CORRECT@@"></audio>
 <script>window.__FACE_DATA__ = "@@FACE@@";</script>
 <script type="module">
 const $=id=>document.getElementById(id);
@@ -281,7 +285,7 @@ function makeQuestions(){
 let obstacles=[],stars=[],gates=[],questions=[];
 let running=false,paused=false,ended=false,soundOn=true,lookingBack=false;
 let lane=0,jumpY=0,jumpV=0,speed=1,elapsed=0,score=0,starCount=0;
-let ownerDistance=14,boost=0,spawnTimer=0,starTimer=3,gateTimer=2;
+let ownerDistance=20,boost=0,spawnTimer=0,starTimer=3,gateTimer=2;
 let qIndex=0,activeGate=null,gateResolved=false,dayTimer=0,isNight=false;
 let last=performance.now(),toastTimer=null;
 let best=Number(localStorage.getItem('runawayBest')||0);
@@ -293,12 +297,13 @@ function toast(t){
 }
 function disposeList(arr){for(const o of arr)scene.remove(o);arr.length=0}
 function playMusic(){if(!soundOn)return;$('loseMusic').pause();$('loseMusic').currentTime=0;$('music').play().catch(()=>{})}
+function playAnswerSound(id){const a=$(id);if(!soundOn||!a||a.src==='data:audio/mpeg;base64,')return;a.pause();a.currentTime=0;a.play().catch(()=>{})}
 function stopMusic(){$('music').pause()}
 function resetGame(){
  disposeList(obstacles);disposeList(stars);disposeList(gates);
  questions=makeQuestions();qIndex=0;activeGate=null;gateResolved=false;
  lane=0;jumpY=0;jumpV=0;speed=1;elapsed=0;score=0;starCount=0;
- ownerDistance=14;boost=0;spawnTimer=0;starTimer=3;gateTimer=2;
+ ownerDistance=20;boost=0;spawnTimer=0;starTimer=3;gateTimer=2;
  dayTimer=0;isNight=false;lookingBack=false;
  horse.position.set(0,0,3);owner.position.set(0,0,17);
  $('score').textContent='0';$('stars').textContent='0';
@@ -371,9 +376,9 @@ function createGate(){
 function answerGate(g){
  if(g.userData.done)return;g.userData.done=true;
  if(lane===g.userData.correctLane){
-  score+=30;ownerDistance=Math.min(25,ownerDistance+4);toast('✅ Chính xác! Qua ải toán!');
+  score+=30;ownerDistance=Math.min(25,ownerDistance+3.5);playAnswerSound('correctAnswerSound');toast('✅ Chính xác! Qua ải toán!');
  }else{
-  ownerDistance=Math.max(2.5,ownerDistance-5);toast('❌ Sai rồi! Ông chủ tiến gần hơn!');
+  ownerDistance=Math.max(5.5,ownerDistance-2.8);playAnswerSound('wrongAnswerSound');toast('❌ Sai rồi! Ông chủ tiến gần hơn!');
  }
  $('question').textContent='Đang chạy đến ải tiếp theo…';
  if(activeGate===g)activeGate=null;
@@ -469,5 +474,7 @@ document.addEventListener('visibilitychange',()=>{
 """
 html = html.replace("@@MUSIC@@", music)
 html = html.replace("@@LOSE@@", lose_music)
+html = html.replace("@@WRONG@@", wrong_answer_sound)
+html = html.replace("@@CORRECT@@", correct_answer_sound)
 html = html.replace("@@FACE@@", face)
 components.html(html, height=850, scrolling=False)
