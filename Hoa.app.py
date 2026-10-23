@@ -40,7 +40,11 @@ canvas{display:block}
 .top{position:absolute;top:9px;left:8px;right:8px;display:flex;justify-content:space-between;gap:5px;align-items:center}
 .pill{background:#07313de8;border:1px solid #ffffff66;border-radius:12px;padding:8px;font-size:12px;font-weight:bold}
 button{touch-action:manipulation;cursor:pointer}
-#hamb{pointer-events:auto;background:#07313d;color:white;border:1px solid #ffffff66;border-radius:12px;padding:8px 12px;font-size:22px}
+#hamb,#settingsBtn{pointer-events:auto;background:#07313d;color:white;border:1px solid #ffffff66;border-radius:12px;padding:8px 12px;font-size:22px}
+#settingsBtn{position:absolute;top:12px;right:12px;z-index:5;background:#07313de8}
+#rules{display:none;z-index:8}
+.rulesText{text-align:left;font-size:14px;line-height:1.65;max-height:55vh;overflow:auto}
+#closeRules{margin-top:10px}
 #question{position:absolute;top:62px;left:50%;transform:translateX(-50%);width:min(94%,520px);text-align:center;background:#082c36ef;border:2px solid #ffe16b;border-radius:15px;padding:10px;font-weight:bold;font-size:15px}
 .controls{position:absolute;bottom:15px;left:10px;right:10px;display:flex;justify-content:space-between;align-items:end;gap:5px}
 .group{display:flex;gap:7px}
@@ -61,6 +65,7 @@ h1{font-size:clamp(35px,8vw,58px);margin:0;text-shadow:3px 4px #9a431b}
 </head>
 <body>
 <div id="game">
+ <button id="settingsBtn" aria-label="Thể lệ">⚙️</button>
  <div id="hud">
   <div class="top">
    <div class="pill">🏁 <span id="score">0</span> m</div>
@@ -95,6 +100,19 @@ h1{font-size:clamp(35px,8vw,58px);margin:0;text-shadow:3px 4px #9a431b}
    <button class="action" id="resume">▶ TIẾP TỤC</button>
    <button class="action" id="restart">↻ CHƠI LẠI</button>
    <button class="action secondary" id="home1">⌂ VỀ MENU</button>
+  </div>
+ </div>
+ <div id="rules" class="overlay">
+  <div class="panel"><h2>⚙️ THỂ LỆ CHƠI</h2>
+   <div class="rulesText">
+    <b>🎯 Mục tiêu:</b> cưỡi ngựa vượt các cổng toán và chạy càng xa càng tốt trước khi ông chủ bắt được!<br>
+    <b>🧠 Cổng toán:</b> chọn làn có đáp án đúng để được cộng điểm và kéo giãn khoảng cách với ông chủ. Trả lời sai khiến ông chủ tiến gần hơn.<br>
+    <b>🎮 Điều khiển:</b> phím ←/→ hoặc A/D để đổi làn; Space hoặc ↑ để nhảy; R để quay đầu nhìn ông chủ. Trên điện thoại, dùng các nút trên màn hình.<br>
+    <b>⭐ Sao:</b> nhặt sao để tăng tốc và cộng sao.<br>
+    <b>💥 Chướng ngại:</b> né vật cản, đừng để ngựa va vào chúng.<br>
+    <b>🔊 Âm thanh:</b> có thể bật/tắt nhạc và hiệu ứng âm thanh ở menu.
+   </div>
+   <button class="action" id="closeRules">ĐÃ HIỂU!</button>
   </div>
  </div>
  <div id="end" class="overlay">
@@ -378,7 +396,7 @@ function answerGate(g){
  if(lane===g.userData.correctLane){
   score+=30;ownerDistance=Math.min(25,ownerDistance+3.5);playAnswerSound('correctAnswerSound');toast('✅ Chính xác! Qua ải toán!');
  }else{
-  ownerDistance=Math.max(5.5,ownerDistance-2.8);playAnswerSound('wrongAnswerSound');toast('❌ Sai rồi! Ông chủ tiến gần hơn!');
+  if(Math.random()<0.70){ownerDistance=Math.max(7.5,ownerDistance-5.0);toast('❌ Sai rồi! Ông chủ tăng tốc áp sát!')}else{ownerDistance=Math.max(9.5,ownerDistance-2.8);toast('❌ Sai rồi! Ông chủ tiến gần hơn!')}playAnswerSound('wrongAnswerSound');
  }
  $('question').textContent='Đang chạy đến ải tiếp theo…';
  if(activeGate===g)activeGate=null;
@@ -392,6 +410,9 @@ $('turn').onclick=()=>{if(running&&!paused&&!ended){lookingBack=!lookingBack;$('
 $('start').onclick=resetGame;$('restart').onclick=resetGame;$('again').onclick=resetGame;
 $('home1').onclick=home;$('home2').onclick=home;
 $('hamb').onclick=()=>{if(running&&!paused&&!ended){paused=true;$('pause').style.display='flex';stopMusic()}};
+$('settingsBtn').onclick=()=>{if(running&&!paused&&!ended){paused=true;stopMusic()}$('rules').style.display='flex'};
+$('closeRules').onclick=()=>{ $('rules').style.display='none'; if(running&&!ended){paused=false;last=performance.now();playMusic()} };
+$('home1').onclick=home;$('home2').onclick=home;
 $('resume').onclick=()=>{if(running&&paused&&!ended){paused=false;$('pause').style.display='none';last=performance.now();playMusic()}};
 $('sound').onclick=()=>{
  soundOn=!soundOn;$('sound').textContent=soundOn?'🔊 ÂM THANH: BẬT':'🔇 ÂM THANH: TẮT';
@@ -418,7 +439,7 @@ function animate(now){
  if(running&&!paused&&!ended){
   elapsed+=dt;boost=Math.max(0,boost-dt);
   const base=Math.min(2.6,1+elapsed*.012);speed=Math.min(3.8,base+(boost>0?1.1:0));
-  score+=dt*speed*2;ownerDistance-=dt*(speed<1.45?.6:.13);
+  score+=dt*speed*2;ownerDistance-=dt*(speed<1.45?.22:.07);
   owner.position.z=horse.position.z+ownerDistance;if(ownerDistance<2.8)finish();
   const travel=speed*dt*12;
   for(const s of stripes){s.position.z+=travel;if(s.position.z>8)s.position.z-=190}
@@ -430,7 +451,7 @@ function animate(now){
   for(const o of obstacles){
    o.position.z+=travel;
    if(Math.abs(o.position.z-horse.position.z)<1.1&&Math.abs(o.position.x-horse.position.x)<1.15&&jumpY<1){
-    ownerDistance=Math.max(2.5,ownerDistance-2.5);o.position.z=20;toast('💥 Va chạm! Ông chủ áp sát!');
+    ownerDistance=Math.max(6.0,ownerDistance-2.5);o.position.z=20;toast('💥 Va chạm! Ông chủ áp sát!');
    }
   }
   obstacles=obstacles.filter(o=>{if(o.position.z>12){scene.remove(o);return false}return true});
